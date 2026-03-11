@@ -2,16 +2,21 @@ using UnityEngine;
 
 public class Obstacle : MonoBehaviour
 {
-    [Header("Movement Settings")]
+    [HideInInspector]
     public float moveSpeed = 10.0f;
     public float despawnZ = -10.0f;
 
     private bool scoreAdded = false;
 
+    public void SetSpeed(float speed)
+    {
+        moveSpeed = speed;
+    }
+
     void Update()
     {
         // Move backwards along Z axis
-        transform.Translate(Vector3.back * moveSpeed * Time.deltaTime);
+        transform.Translate(Vector3.down * moveSpeed * Time.deltaTime);
 
         // Check if passed the player safely
         if (transform.position.z <= despawnZ && !scoreAdded)

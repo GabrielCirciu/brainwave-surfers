@@ -4,22 +4,21 @@ public class VehicleController : MonoBehaviour
 {
     [Header("Movement Settings")]
     [Tooltip("The X position for the left side of the road.")]
-    public float leftX = -2.0f;
+    public float leftX = -5.0f;
     [Tooltip("The X position for the right side of the road.")]
-    public float rightX = 2.0f;
+    public float rightX = 5.0f;
     [Tooltip("How fast the vehicle moves between sides.")]
     public float moveSpeed = 10.0f;
 
-    private bool isOnRightSide = false;
     private float targetX;
 
     void Start()
     {
         // Initialize position
         targetX = leftX;
-        Vector3 pos = transform.position;
-        pos.x = leftX;
-        transform.position = pos;
+        //Vector3 pos = transform.position;
+        //pos.x = leftX;
+        //transform.position = pos;
     }
 
     void Update()
@@ -27,12 +26,10 @@ public class VehicleController : MonoBehaviour
         // Legacy Input System: Horizontal axis or specific keys
         if (Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.A))
         {
-            isOnRightSide = false;
             targetX = leftX;
         }
         else if (Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.D))
         {
-            isOnRightSide = true;
             targetX = rightX;
         }
 

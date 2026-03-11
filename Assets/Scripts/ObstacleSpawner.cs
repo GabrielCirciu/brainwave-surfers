@@ -4,6 +4,7 @@ public class ObstacleSpawner : MonoBehaviour
 {
     [Header("Spawner Settings")]
     public GameObject obstaclePrefab;
+    public float obstacleSpeed = 10.0f;
     public float spawnInterval = 2.0f;
     public float spawnZ = 50.0f;
     
@@ -36,7 +37,9 @@ public class ObstacleSpawner : MonoBehaviour
         // Randomly choose a lane (left or right)
         float spawnX = Random.value > 0.5f ? rightX : leftX;
         Vector3 spawnPos = new Vector3(spawnX, 0.6f, spawnZ); // Adjust Y based on plane/cube size
-
-        Instantiate(obstaclePrefab, spawnPos, Quaternion.identity);
+        // rotate object on X axis by 90 degrees
+        GameObject go = Instantiate(obstaclePrefab, spawnPos, Quaternion.Euler(90, 0, 0));
+        Obstacle obstacle = go.GetComponent<Obstacle>();
+        obstacle.SetSpeed(obstacleSpeed);
     }
 }
