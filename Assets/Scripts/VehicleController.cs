@@ -10,15 +10,20 @@ public class VehicleController : MonoBehaviour
     [Tooltip("How fast the vehicle moves between sides.")]
     public float moveSpeed = 10.0f;
 
+    [Header("LSL Settings")]
+    public LSLReceiver lslReceiver;
+    public int leftChannelIndex = 0;   // Example indexes
+    public int rightChannelIndex = 1;
+    public float threshold = 0.5f;     // Threshold for activation
+
     private float targetX;
 
     void Start()
     {
         // Initialize position
         targetX = leftX;
-        //Vector3 pos = transform.position;
-        //pos.x = leftX;
-        //transform.position = pos;
+        if (lslReceiver == null)
+            lslReceiver = GetComponent<LSLReceiver>();
     }
 
     void Update()
@@ -31,6 +36,21 @@ public class VehicleController : MonoBehaviour
         else if (Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.D))
         {
             targetX = rightX;
+        }
+
+        // LSL Input Logic
+        if (lslReceiver != null && lslReceiver.LastSample != null)
+        {
+            print("Left: " + lslReceiver.LastSample[leftChannelIndex] + " Right: " + lslReceiver.LastSample[rightChannelIndex]);
+
+            if (lslReceiver.LastSample[leftChannelIndex] > threshold)
+            {
+                targetX = leftX;
+            }
+            else if (lslReceiver.LastSample[rightChannelIndex] > threshold)
+            {
+                targetX = rightX;
+            }
         }
 
         // Smoothly move towards target X
