@@ -36,7 +36,7 @@ public class Obstacle : MonoBehaviour
         if (healthcare.CompareTag("Player"))
         {
             Debug.Log("Collision! Game Over or Score Reset.");
-            ScoreManager.Instance.score = 0;
+            ScoreManager.Instance.ResetScore();
             Destroy(gameObject);
         }
     }

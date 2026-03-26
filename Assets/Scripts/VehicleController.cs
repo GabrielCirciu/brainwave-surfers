@@ -22,8 +22,6 @@ public class VehicleController : MonoBehaviour
     {
         // Initialize position
         targetX = leftX;
-        if (lslReceiver == null)
-            lslReceiver = GetComponent<LSLReceiver>();
     }
 
     void Update()
@@ -41,7 +39,7 @@ public class VehicleController : MonoBehaviour
         // LSL Input Logic
         if (lslReceiver != null && lslReceiver.LastSample != null)
         {
-            print("Left: " + lslReceiver.LastSample[leftChannelIndex] + " Right: " + lslReceiver.LastSample[rightChannelIndex]);
+            Debug.Log("Left: " + lslReceiver.LastSample[leftChannelIndex] + " Right: " + lslReceiver.LastSample[rightChannelIndex]);
 
             if (lslReceiver.LastSample[leftChannelIndex] > threshold)
             {
