@@ -9,6 +9,8 @@ public class GameManager : MonoBehaviour
     [SerializeField] private GameObject ScoreCanvas;
     [SerializeField] private GameObject BCIVisualERP3D;
     [SerializeField] private GameObject BCIMotionERP3D;
+    [SerializeField] private GameObject LSLReceiver;
+    [SerializeField] private GameObject PlayerVehicle;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -29,20 +31,7 @@ public class GameManager : MonoBehaviour
         ScoreManager.SetActive(true);
         ObstacleSpawnwer.SetActive(true);
         ScoreCanvas.SetActive(true);
-
-        // Depending on what the dropdown is, enable the corresponding BCI
-        if (config == "Visual (M)")
-        {
-            
-        }
-        else if (config == "Visual (F)")
-        {
-            BCIVisualERP3D.SetActive(true);
-        }
-        else if (config == "Motion")
-        {
-            Debug.Log("Motion Imagery selected, not implemented yet");
-        }
+        PlayerVehicle.GetComponent<VehicleController>().enabled = true;
     }
 
     private string config = "Visual (M)"; // Default value
@@ -58,7 +47,7 @@ public class GameManager : MonoBehaviour
             Debug.Log("Visual (M) selected");
             BCIMotionERP3D.SetActive(true);
             BCIVisualERP3D.SetActive(false);
-            // Deactivate MI
+            LSLReceiver.SetActive(false);
         }
         else if (index == 1)
         {
@@ -66,7 +55,7 @@ public class GameManager : MonoBehaviour
             Debug.Log("Visual (F) selected");
             BCIMotionERP3D.SetActive(false);
             BCIVisualERP3D.SetActive(true);
-            // Deactivate MI
+            LSLReceiver.SetActive(false);
         }
         else if (index == 2)
         {
@@ -74,7 +63,7 @@ public class GameManager : MonoBehaviour
             Debug.Log("Motion selected");
             BCIMotionERP3D.SetActive(false);
             BCIVisualERP3D.SetActive(false);
-            // Activate MI
+            LSLReceiver.SetActive(true);
         }
     }
 }

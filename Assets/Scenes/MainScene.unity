@@ -422,6 +422,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ScoreManager
   scoreText: {fileID: 1080036466}
+  ObstacleSpawnwer: {fileID: 340688332}
   score: 0
 --- !u!4 &313198186
 Transform:
@@ -1540,6 +1541,8 @@ MonoBehaviour:
   ScoreCanvas: {fileID: 1759466425}
   BCIVisualERP3D: {fileID: 1302642630}
   BCIMotionERP3D: {fileID: 880028468}
+  LSLReceiver: {fileID: 1599902540}
+  PlayerVehicle: {fileID: 658979912}
 --- !u!1 &1068535426
 GameObject:
   m_ObjectHideFlags: 0

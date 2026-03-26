@@ -5,6 +5,7 @@ public class ScoreManager : MonoBehaviour
 {
     public static ScoreManager Instance { get; private set; }
     public TextMeshProUGUI scoreText;
+    public GameObject ObstacleSpawnwer;
 
     public int score = 0;
 
@@ -38,5 +39,14 @@ public class ScoreManager : MonoBehaviour
     {
         score = 0;
         scoreText.text = score.ToString();
+        ObstacleSpawnwer.SetActive(false);
+        // Find all objects with tag "Vehicle" and destroy them
+        GameObject[] vehicles = GameObject.FindGameObjectsWithTag("Vehicle");
+        foreach (GameObject vehicle in vehicles)
+        {
+            Destroy(vehicle);
+        }
     }
+
+
 }
