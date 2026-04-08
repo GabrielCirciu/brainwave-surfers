@@ -10,6 +10,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private GameObject BCIMotionERP3D;
     [SerializeField] private GameObject LSLReceiver;
     [SerializeField] private GameObject PlayerVehicle;
+    [SerializeField] private GameObject EnemyShip;
     private VehicleController vehicleController;
 
     void Awake()
@@ -21,6 +22,7 @@ public class GameManager : MonoBehaviour
     {
         MainMenuCanvas.SetActive(false);
         ObstacleSpawnwer.SetActive(true);
+        EnemyShip.SetActive(true);
         vehicleController.enabled = true;
         ScoreManager.GetComponent<ScoreManager>().StartGame();
     }

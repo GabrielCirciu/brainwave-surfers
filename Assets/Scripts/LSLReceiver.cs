@@ -16,10 +16,8 @@ public class LSLReceiver : AFloatInlet
         // Copy the new sample to LastSample for external access
         if (LastSample == null || LastSample.Length != newSample.Length)
         {
-            Debug.Log("New sample length: " + newSample.Length);
             LastSample = new float[newSample.Length];
         }
         Array.Copy(newSample, LastSample, newSample.Length);
-        Debug.Log("New sample received! " + LastSample);
     }
 }
