@@ -3,8 +3,10 @@ import pickle
 import mne
 from mne.decoding import CSP
 from sklearn.pipeline import Pipeline
+from sklearn.svm import SVC
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-from sklearn.model_selection import ShuffleSplit, cross_val_score
+from sklearn.model_selection import ShuffleSplit, GridSearchCV
 import sys
 
 def main():
@@ -26,9 +28,6 @@ def main():
     info = mne.create_info(ch_names=ch_names, sfreq=fs, ch_types=ch_types)
 
     # Create MNE EpochsArray
-    # Shape of epochs_data: (n_epochs, n_channels, n_times)
-    # Important: Convert to Volts if it was stored in microvolts. MNE expects Volts. 
-    # Usually Unicorn sends microvolts. So we multiply by 1e-6.
     epochs_data = epochs_data * 1e-6
     epochs = mne.EpochsArray(epochs_data, info, verbose=False)
 
@@ -36,33 +35,72 @@ def main():
     print("Filtering data (8-30 Hz)...")
     epochs.filter(8., 30., fir_design='firwin', skip_by_annotation='edge', verbose=False)
 
+    # Drop the first 0.5 seconds to account for human reaction time to the visual cue!
+    epochs.crop(tmin=0.5)
+
     # Extract the filtered data back into a numpy array
     X = epochs.get_data(copy=True)
     y = labels
 
-    # 2. Build the Machine Learning Pipeline
-    # CSP extracts spatial patterns that maximize variance for one class vs the other
-    csp = CSP(n_components=4, reg=None, log=True, norm_trace=False)
-    # LDA classifies those variance features
-    lda = LinearDiscriminantAnalysis()
+    # 2. Build the AutoML parameter grid
+    param_grid = [
+        # 1. Support Vector Machine Combinations
+        {
+            'CSP__n_components': [2, 4],
+            'CSP__reg': [None, 'ledoit_wolf'],
+            'clf': [SVC(probability=True)],
+            'clf__kernel': ['linear', 'rbf'],
+            'clf__C': [0.1, 1.0, 10.0]
+        },
+        # 2. Linear Discriminant Analysis Combinations
+        {
+            'CSP__n_components': [2, 4],
+            'CSP__reg': [None, 'ledoit_wolf'],
+            'clf': [LinearDiscriminantAnalysis()],
+            'clf__solver': ['lsqr', 'eigen'],
+            'clf__shrinkage': ['auto']
+        },
+        # 3. Random Forest Combinations
+        {
+            'CSP__n_components': [2, 4],
+            'CSP__reg': [None, 'ledoit_wolf'],
+            'clf': [RandomForestClassifier(random_state=42)],
+            'clf__n_estimators': [50, 100],
+            'clf__max_depth': [None, 3]
+        }
+    ]
 
-    clf = Pipeline([('CSP', csp), ('LDA', lda)])
+    base_pipeline = Pipeline([
+        ('CSP', CSP(log=True, norm_trace=False)),
+        ('clf', SVC()) # Placeholder, will be swapped by GridSearchCV
+    ])
 
-    # 3. Cross-Validation
     cv = ShuffleSplit(10, test_size=0.2, random_state=42)
-    scores = cross_val_score(clf, X, y, cv=cv, n_jobs=1)
-    
-    print("\nEvaluation")
-    print(f"Cross-Validation Accuracy: {scores.mean():.2f} +/- {scores.std():.2f}")
-    if scores.mean() < 0.6:
-        print("Warning: Accuracy is low. You may need more trials or better focus during calibration.")
 
-    # 4. Train final model on all data and save it
-    print("\nTraining final model on all data...")
-    clf.fit(X, y)
+    # 3. Run the Grid Search Tournament
+    print("\nStarting automated model selection tournament (This will take a few seconds)...")
+    grid_search = GridSearchCV(base_pipeline, param_grid, cv=cv, n_jobs=1, verbose=1)
     
+    # We suppress CSP warnings during search to keep the console clean
+    mne.set_log_level('ERROR')
+    grid_search.fit(X, y)
+    mne.set_log_level('INFO')
+
+    best_model = grid_search.best_estimator_
+    best_score = grid_search.best_score_
+    
+    print("\nTournament Results:")
+    print(f"WINNING MODEL: {grid_search.best_params_['clf']}")
+    print(f"WINNING HYPERPARAMS: {grid_search.best_params_}")
+    print(f"Cross-Validation Accuracy: {best_score:.2f}")
+
+    if best_score < 0.6:
+        print("\nWarning: Accuracy is low. You may need more trials or better focus during calibration.")
+
+    # 4. Save the absolute best model
+    print("\nDeploying #1 Ranked Model to model.pkl...")
     with open('model.pkl', 'wb') as f:
-        pickle.dump(clf, f)
+        pickle.dump(best_model, f)
     
     print("Model saved to model.pkl")
     print("You can now run realtime_predict.py!")

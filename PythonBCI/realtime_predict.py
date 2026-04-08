@@ -1,5 +1,5 @@
 import numpy as np
-from pylsl import StreamInlet, resolve_stream, StreamInfo, StreamOutlet
+from pylsl import StreamInlet, resolve_byprop, StreamInfo, StreamOutlet
 import time
 import pickle
 import mne
@@ -15,7 +15,12 @@ def main():
         sys.exit(1)
 
     print("Looking for Unicorn EEG stream...")
-    streams = resolve_stream('type', 'EEG')
+    streams = []
+    while not streams:
+        streams = resolve_byprop('type', 'EEG', 1, 3.0)
+        if len(streams) == 0:
+            print("Still waiting for EEG stream... (Is GTec LSL running or mock_eeg_stream.py running?)")
+            
     inlet = StreamInlet(streams[0])
     
     info = inlet.info()
@@ -26,9 +31,9 @@ def main():
     # Setting up the Outlet for Unity
     # We will send 2 channels: [Probability_Left, Probability_Right]
     # LSL Receiver in Unity will read this
-    outlet_info = StreamInfo(name='BCIPredictor', type='Markers', channel_count=2, nominal_srate=0, channel_format='float32', source_id='bcipred1')
+    outlet_info = StreamInfo(name='BCIPredictor3', type='Predictor', channel_count=3, nominal_srate=0, channel_format='float32', source_id='bcipred_v3')
     outlet = StreamOutlet(outlet_info)
-    print("Created BCIPredictor Outlet. Unity can now connect to this!")
+    print("Created BCIPredictor3 Outlet. Unity can now connect to this!")
 
     # Real-time processing parameters
     # The model was trained on 4-second epochs. 
@@ -79,6 +84,10 @@ def main():
                 # We suppress verbose output because it prints continuously 
                 X_epochs = mne.EpochsArray(X_raw, mne_info, verbose=False)
                 X_epochs.filter(8., 30., fir_design='firwin', verbose=False)
+                
+                # Drop the oldest 0.5 seconds of the buffer to match the training data curve!
+                X_epochs.crop(tmin=0.5)
+                
                 X_filtered = X_epochs.get_data(copy=True)
                 
                 # 3. Predict Probabilities using train model (clf)
@@ -89,10 +98,8 @@ def main():
                 outlet.push_sample(probs.tolist())
                 
                 # Print debug nicely
-                # Left -> class 0, Right -> class 1
-                bar_size = int(probs[0] * 50)
-                bar = "#" * bar_size + "-" * (50 - bar_size)
-                print(f"LEFT {probs[0]:.2f} [{bar}] RIGHT {probs[1]:.2f}", end='\r')
+                # Left -> class 0, Right -> class 1, Rest -> class 2
+                print(f"L {probs[0]:.2f} | Rest {probs[2]:.2f} | R {probs[1]:.2f}        ", end='\r')
                 
                 last_update = time.time()
                 

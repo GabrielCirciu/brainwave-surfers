@@ -1,5 +1,5 @@
 import numpy as np
-from pylsl import StreamInlet, resolve_stream
+from pylsl import StreamInlet, resolve_byprop
 import time
 import os
 
@@ -10,7 +10,7 @@ def main():
     print("Looking for UnityMarkers stream... (Make sure Unity is Playing!)")
     marker_streams = []
     while not marker_streams:
-        marker_streams = resolve_stream('name', 'UnityMarkers', 1, 3.0)
+        marker_streams = resolve_byprop('name', 'UnityMarkers', 1, 3.0)
         if len(marker_streams) == 0:
             print("Still waiting for UnityMarkers stream... (Is Unity in Play Mode?)")
             
@@ -20,9 +20,9 @@ def main():
     print("Looking for EEG stream...")
     eeg_streams = []
     while not eeg_streams:
-        eeg_streams = resolve_stream('type', 'EEG', 1, 3.0)
+        eeg_streams = resolve_byprop('type', 'EEG', 1, 3.0)
         if len(eeg_streams) == 0:
-            print("Still waiting for EEG stream... (Is GTec LSL running?)")
+            print("Still waiting for EEG stream... (Is GTec LSL running or mock stream active?)")
             
     eeg_inlet = StreamInlet(eeg_streams[0])
     
@@ -65,7 +65,10 @@ def main():
             elif cmd == "RIGHT_START":
                 is_recording = True
                 current_trial_class = 1
-            elif cmd in ("LEFT_END", "RIGHT_END") and is_recording:
+            elif cmd == "REST_START":
+                is_recording = True
+                current_trial_class = 2
+            elif cmd in ("LEFT_END", "RIGHT_END", "REST_END") and is_recording:
                 # The trial just ended, the buffer currently holds the last 4 seconds
                 trial_data = buffer.copy()
                 epochs_data.append(trial_data)

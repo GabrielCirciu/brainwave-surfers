@@ -34,12 +34,13 @@ public class CalibrationManager : MonoBehaviour
         promptText.text = "Starting soon...";
         yield return new WaitForSeconds(5f);
 
-        int totalTrials = trialsPerClass * 2;
+        int totalTrials = trialsPerClass * 3;
         int[] trialQueue = new int[totalTrials];
         for (int i = 0; i < trialsPerClass; i++)
         {
             trialQueue[i] = 0; // Left
             trialQueue[i + trialsPerClass] = 1; // Right
+            trialQueue[i + (2 * trialsPerClass)] = 2; // Rest
         }
 
         // Shuffle trial order
@@ -58,26 +59,43 @@ public class CalibrationManager : MonoBehaviour
             yield return new WaitForSeconds(relaxDuration);
             promptText.text = "Ready...";
             yield return new WaitForSeconds(1.5f); // Get ready timer before showing cue
-            string dir = trialQueue[i] == 0 ? "<-" : "->";
+            string dir = "";
+            if (trialQueue[i] == 0) dir = "<-";
+            else if (trialQueue[i] == 1) dir = "->";
+            else dir = "HOLD";
+
             promptText.text = dir;
             yield return new WaitForSeconds(1f); // Show cue timer before recording
-            vehicleMover.MoveInXSeconds(dir, 4.0f);
+            
+            if (dir != "HOLD")
+            {
+                vehicleMover.MoveInXSeconds(dir, 4.0f);
+            }
+
             if (dir == "<-")
             {
                 markerStream.WriteMarker("LEFT_START");
             }
-            else
+            else if (dir == "->")
             {
                 markerStream.WriteMarker("RIGHT_START");
+            }
+            else
+            {
+                markerStream.WriteMarker("REST_START");
             }
             yield return new WaitForSeconds(4.0f); // Task timer
             if (dir == "<-")
             {
                 markerStream.WriteMarker("LEFT_END");
             }
-            else
+            else if (dir == "->")
             {
                 markerStream.WriteMarker("RIGHT_END");
+            }
+            else
+            {
+                markerStream.WriteMarker("REST_END");
             }
             vehicleMover.ReturnToOrigin();
         }

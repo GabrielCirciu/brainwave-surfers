@@ -2975,8 +2975,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b35aa2ebd3124f74dbfe847e9c1f17cd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LSLReceiver
-  StreamName: 
-  StreamType: EEG
+  StreamName: BCIPredictor
+  StreamType: Markers
   moment: 0
   ProcessLastInChunkOnly: 0
   resolver: {fileID: 0}
