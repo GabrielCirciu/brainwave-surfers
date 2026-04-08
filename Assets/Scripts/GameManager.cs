@@ -6,61 +6,59 @@ public class GameManager : MonoBehaviour
     [SerializeField] private GameObject MainMenuCanvas;
     [SerializeField] private GameObject ScoreManager;
     [SerializeField] private GameObject ObstacleSpawnwer;
-    [SerializeField] private GameObject ScoreCanvas;
     [SerializeField] private GameObject BCIVisualERP3D;
     [SerializeField] private GameObject BCIMotionERP3D;
     [SerializeField] private GameObject LSLReceiver;
     [SerializeField] private GameObject PlayerVehicle;
+    private VehicleController vehicleController;
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    void Awake()
     {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
+        vehicleController = PlayerVehicle.GetComponent<VehicleController>();
     }
 
     public void onStartPressed()
     {
-        Debug.Log("Start Pressed");
         MainMenuCanvas.SetActive(false);
-        ScoreManager.SetActive(true);
         ObstacleSpawnwer.SetActive(true);
-        ScoreCanvas.SetActive(true);
-        PlayerVehicle.GetComponent<VehicleController>().enabled = true;
+        vehicleController.enabled = true;
+        ScoreManager.GetComponent<ScoreManager>().StartGame();
     }
 
-    private string config = "Visual (M)"; // Default value
+    public void onEndGame()
+    {
+        ObstacleSpawnwer.SetActive(false);
+        GameObject[] obstacles = GameObject.FindGameObjectsWithTag("Obstacle");
+        foreach (GameObject obstacle in obstacles)
+        {
+            Destroy(obstacle);
+        }
+        MainMenuCanvas.SetActive(true);
+        vehicleController.enabled = false;
+        PlayerVehicle.transform.position = new Vector3(0, 0, 0);
+    }
 
-    // Unity dropdown with 3 options, Visual (M), Visual (F), Motion
-    // Collect which dropdown menu is selected. 
-    // Unity's OnValueChanged event for dropdowns passes an integer index by default!
+    // Unity dropdown with 4 options, Nothing, Flash, Motion, Motor Imagery
     public void onConfigDropdownChanged(int index)
     {
         if (index == 0)
         {
-            config = "Visual (M)";
-            Debug.Log("Visual (M) selected");
+            // Nothing, default state
+        }
+        else if (index == 1)
+        {
             BCIMotionERP3D.SetActive(true);
             BCIVisualERP3D.SetActive(false);
             LSLReceiver.SetActive(false);
         }
-        else if (index == 1)
+        else if (index == 2)
         {
-            config = "Visual (F)";
-            Debug.Log("Visual (F) selected");
             BCIMotionERP3D.SetActive(false);
             BCIVisualERP3D.SetActive(true);
             LSLReceiver.SetActive(false);
         }
-        else if (index == 2)
+        else if (index == 3)
         {
-            config = "Motion";
-            Debug.Log("Motion selected");
             BCIMotionERP3D.SetActive(false);
             BCIVisualERP3D.SetActive(false);
             LSLReceiver.SetActive(true);

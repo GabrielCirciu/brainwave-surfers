@@ -4,48 +4,32 @@ using TMPro;
 public class ScoreManager : MonoBehaviour
 {
     public static ScoreManager Instance { get; private set; }
-    public TextMeshProUGUI scoreText;
-    public GameObject ObstacleSpawnwer;
-
-    public int score = 0;
+    [SerializeField] private TextMeshProUGUI scoreText;
+    [SerializeField] private GameObject GameManager;
+    private GameManager gameManager;
+    private int score = 0;
 
     void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-            scoreText.text = score.ToString();
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
+        Instance = this;
+        gameManager = GameManager.GetComponent<GameManager>();
+    }
+
+    public void StartGame()
+    {
+        score = 0;
+        scoreText.text = score.ToString();
     }
 
     public void AddPoint()
     {
         score++;
-        // Debug.Log("Score: " + score);
         scoreText.text = score.ToString();
     }
 
-    public int GetScore()
+    public void EndGame()
     {
-        return score;
-    }
-
-    public void ResetScore()
-    {
-        score = 0;
-        scoreText.text = score.ToString();
-        ObstacleSpawnwer.SetActive(false);
-        // Find all objects with tag "Vehicle" and destroy them
-        GameObject[] vehicles = GameObject.FindGameObjectsWithTag("Vehicle");
-        foreach (GameObject vehicle in vehicles)
-        {
-            Destroy(vehicle);
-        }
+        gameManager.onEndGame();
     }
 
 

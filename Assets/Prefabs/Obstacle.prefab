@@ -125,5 +125,3 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0ab50e99679c74343b210167362fd2bf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Obstacle
-  moveSpeed: 10
-  despawnZ: -10

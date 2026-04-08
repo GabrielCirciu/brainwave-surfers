@@ -2,11 +2,8 @@ using UnityEngine;
 
 public class Obstacle : MonoBehaviour
 {
-    [HideInInspector]
-    public float moveSpeed = 10.0f;
-    public float despawnZ = -10.0f;
-
-    private bool scoreAdded = false;
+    private float moveSpeed = 10.0f;
+    private float despawnZ = -10.0f;
 
     public void SetSpeed(float speed)
     {
@@ -18,26 +15,17 @@ public class Obstacle : MonoBehaviour
         // Move backwards along Z axis
         transform.Translate(Vector3.down * moveSpeed * Time.deltaTime);
 
-        // Check if passed the player safely
-        if (transform.position.z <= despawnZ && !scoreAdded)
+        // Add score
+        if (transform.position.z <= despawnZ)
         {
-            scoreAdded = true;
-            if (ScoreManager.Instance != null)
-            {
-                ScoreManager.Instance.AddPoint();
-            }
+            ScoreManager.Instance.AddPoint();
             Destroy(gameObject);
         }
     }
 
-    void OnTriggerEnter(Collider healthcare)
+    // Check if collided with the player
+    void OnTriggerEnter(Collider objectCollider)
     {
-        // Check if collided with the player
-        if (healthcare.CompareTag("Player"))
-        {
-            Debug.Log("Collision! Game Over or Score Reset.");
-            ScoreManager.Instance.ResetScore();
-            Destroy(gameObject);
-        }
+        ScoreManager.Instance.EndGame();
     }
 }
