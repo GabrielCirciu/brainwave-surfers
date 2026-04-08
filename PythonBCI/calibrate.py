@@ -35,6 +35,11 @@ def main():
 
     epochs_data = []
     labels = []
+    
+    # Storage for continuous EDA stream
+    raw_stream = []
+    eda_markers = []
+    global_sample_count = 0
 
     print("\nStarting calibration...")
     
@@ -46,6 +51,9 @@ def main():
         chunk, timestamps = eeg_inlet.pull_chunk(timeout=0.001)
         if chunk:
             chunk_arr = np.array(chunk).T[:EEG_CHANNELS, :]
+            raw_stream.append(chunk_arr)
+            global_sample_count += chunk_arr.shape[1]
+            
             n_new = chunk_arr.shape[1]
             if n_new >= BUFFER_SAMPLES:
                 buffer = chunk_arr[:, -BUFFER_SAMPLES:]
@@ -58,6 +66,7 @@ def main():
         if marker:
             cmd = marker[0]
             print(f"Received Marker: {cmd}")
+            eda_markers.append((cmd, global_sample_count))
             
             if cmd == "LEFT_START":
                 is_recording = True
@@ -85,6 +94,13 @@ def main():
         output_file = 'calib_data.npz'
         np.savez(output_file, epochs=epochs_arr, labels=labels_arr, fs=fs)
         print(f"Saved dataset to {output_file}, shape: {epochs_arr.shape}")
+        
+        # Save continuous data for EDA
+        raw_stream_arr = np.concatenate(raw_stream, axis=1)
+        eda_file = 'calib_continuous_eda.npz'
+        # Convert markers to something saveable (list of strings/ints)
+        np.savez(eda_file, raw=raw_stream_arr, markers=np.array(eda_markers, dtype=str), fs=fs)
+        print(f"Saved RAW continuous stream for EDA to {eda_file}\n - Stream Shape: {raw_stream_arr.shape}\n - Total Markers: {len(eda_markers)}")
     else:
         print("No epochs were recorded.")
 
