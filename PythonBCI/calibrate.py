@@ -20,7 +20,10 @@ def main():
     print("Looking for EEG stream...")
     eeg_streams = []
     while not eeg_streams:
-        eeg_streams = resolve_byprop('type', 'EEG', 1, 3.0)
+        # eeg_streams = resolve_byprop('type', 'EEG', 1, 3.0)
+        eeg_streams = resolve_byprop('name', 'UN-2024.08.41', 1, 3.0)
+        print(eeg_streams)
+        # print(other_streams)
         if len(eeg_streams) == 0:
             print("Still waiting for EEG stream... (Is GTec LSL running or mock stream active?)")
             
