@@ -6,12 +6,12 @@ import os
 BUFFER_DUR = 4.0
 
 def main():
-    print("Looking for UnityMarkers stream... (Make sure Unity is Playing!)")
-    marker_streams = []
-    while not marker_streams:
-        marker_streams = resolve_byprop('name', 'UnityMarkers', 1, 3.0)
-        if len(marker_streams) == 0:
-            print("Still waiting for UnityMarkers stream... (Is Unity in Play Mode?)")
+    #print("Looking for UnityMarkers stream... (Make sure Unity is Playing!)")
+    #marker_streams = []
+    #while not marker_streams:
+    #    marker_streams = resolve_byprop('name', 'UnityMarkers', 1, 3.0)
+    #    if len(marker_streams) == 0:
+    #        print("Still waiting for UnityMarkers stream... (Is Unity in Play Mode?)")
             
     marker_inlet = StreamInlet(marker_streams[0])
     print("Found UnityMarkers stream!")
