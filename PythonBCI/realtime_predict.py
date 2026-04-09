@@ -1,5 +1,5 @@
 import numpy as np
-from pylsl import StreamInlet, resolve_byprop, StreamInfo, StreamOutlet
+from pylsl import StreamInlet, resolve_byprop, StreamInfo, StreamOutlet, resolve_streams
 import time
 import pickle
 import mne
@@ -17,11 +17,13 @@ def main():
     print("Looking for Unicorn EEG stream...")
     streams = []
     while not streams:
-        streams = resolve_byprop('type', 'EEG', 1, 3.0)
+        all_streams = resolve_streams(3.0)
+        valid_names = ['UN-2024.08.41', 'Unicorn', 'UnicornRecorderLSLStream', 'UnicornMock']
+        streams = [s for s in all_streams if s.name() in valid_names or s.name().startswith('UN-2024.08.41') or s.type() == 'EEG']
         if len(streams) == 0:
             print("Still waiting for EEG stream... (Is GTec LSL running or mock_eeg_stream.py running?)")
             
-    inlet = StreamInlet(streams[0])
+    inlet = StreamInlet(streams[-1])
     
     info = inlet.info()
     fs = int(info.nominal_srate())

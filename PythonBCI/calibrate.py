@@ -1,5 +1,5 @@
 import numpy as np
-from pylsl import StreamInlet, resolve_byprop
+from pylsl import StreamInlet, resolve_byprop, resolve_streams
 import time
 import os
 
@@ -18,16 +18,17 @@ def main():
     print("Found UnityMarkers stream!")
 
     print("Looking for EEG stream...")
+    
     eeg_streams = []
     while not eeg_streams:
-        # eeg_streams = resolve_byprop('type', 'EEG', 1, 3.0)
-        eeg_streams = resolve_byprop('name', 'UN-2024.08.41', 1, 3.0)
-        print(eeg_streams)
-        # print(other_streams)
+        streams = resolve_streams(3.0)
+        valid_names = ['UN-2024.08.41', 'Unicorn', 'UnicornRecorderLSLStream', 'UnicornMock']
+        eeg_streams = [s for s in streams if s.name() in valid_names or s.name().startswith('UN-2024.08.41') or s.type() == 'EEG']
+        
         if len(eeg_streams) == 0:
             print("Still waiting for EEG stream... (Is GTec LSL running or mock stream active?)")
             
-    eeg_inlet = StreamInlet(eeg_streams[0])
+    eeg_inlet = StreamInlet(eeg_streams[-1]) # Grab the latest activated stream to avoid zombies
     
     fs = int(eeg_inlet.info().nominal_srate())
     if fs <= 0: fs = 250
