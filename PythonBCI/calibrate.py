@@ -3,7 +3,6 @@ from pylsl import StreamInlet, resolve_byprop, resolve_streams
 import time
 import os
 
-EEG_CHANNELS = 8
 BUFFER_DUR = 4.0
 
 def main():
@@ -32,10 +31,11 @@ def main():
     
     fs = int(eeg_inlet.info().nominal_srate())
     if fs <= 0: fs = 250
-    print(f"Connected to streams. EEG fs={fs}")
+    stream_channels = eeg_inlet.info().channel_count()
+    print(f"Connected to streams. fs={fs}, channels={stream_channels}")
 
     BUFFER_SAMPLES = int(fs * BUFFER_DUR)
-    buffer = np.zeros((EEG_CHANNELS, BUFFER_SAMPLES))
+    buffer = np.zeros((stream_channels, BUFFER_SAMPLES))
 
     epochs_data = []
     labels = []
@@ -54,7 +54,7 @@ def main():
         # 1. Pull EEG block and update buffer
         chunk, timestamps = eeg_inlet.pull_chunk(timeout=0.001)
         if chunk:
-            chunk_arr = np.array(chunk).T[:EEG_CHANNELS, :]
+            chunk_arr = np.array(chunk).T[:stream_channels, :]
             raw_stream.append(chunk_arr)
             global_sample_count += chunk_arr.shape[1]
             
