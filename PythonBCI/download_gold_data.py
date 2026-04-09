@@ -1,57 +1,66 @@
 import numpy as np
-import mne
-from mne.datasets import eegbci
+import warnings
+from moabb.datasets import Schirrmeister2017
+from moabb.paradigms import MotorImagery
 import os
 
-def main():
-    print("Downloading PhysioNet EEG Motor Imagery 'Gold Standard' Dataset...")
-    subject = 1
-    # Run 4, 8, and 12 are specifically Left/Right fist imagery runs
-    runs = [4, 8, 12]
-    
-    # Download data (this will download ~5MB of EEG recordings)
-    raw_fnames = eegbci.load_data(subject, runs)
-    
-    print("\nReading downloaded files...")
-    raws = []
-    for f in raw_fnames:
-        raw = mne.io.read_raw_edf(f, preload=True)
-        mne.datasets.eegbci.standardize(raw)  # standardize channel names
-        raws.append(raw)
-        
-    raw = mne.concatenate_raws(raws)
-    
-    print("\nExtracting Left/Right Motor Imagery trials...")
-    # T1 = Left fist imagery, T2 = Right fist imagery, T0 = Rest
-    events, event_dict = mne.events_from_annotations(raw, event_id={'T1': 0, 'T2': 1, 'T0': 2})
-    
-    # The Unicorn Headset has 8 channels. PhysioNet has 64. 
-    # We will pick 8 standard 10-20 channels close to the motor cortex to mimic your hardware setup:
-    ch_names_to_pick = ['Fz', 'C3', 'Cz', 'C4', 'Pz', 'P3', 'P4', 'Oz']
-    raw.pick(ch_names_to_pick)
-    
-    # Resample to 250Hz to match your game's preferred Unicorn Hz limit
-    raw.resample(250)
-    fs = 250
-    
-    # Epoching: Slice out the 4 seconds after the user is told to imagine moving
-    epochs = mne.Epochs(raw, events, event_id={'Left': 0, 'Right': 1, 'Rest': 2}, tmin=0, tmax=4.0, baseline=None, preload=True)
-    
-    # `raw.get_data()` outputs absolute Volts. Your script expects MicroVolts from hardware.
-    # We multiply by 1e6 to simulate the raw integers dumped by the Unicorn hardware.
-    epochs_data = epochs.get_data(copy=True) * 1e6 
-    labels = epochs.events[:, -1]
-    
-    # Make sure we have exactly 4 seconds of data (250 Hz * 4 = 1000 samples)
-    epochs_data = epochs_data[:, :, :1000]
-    
-    print(f"\nFinal Extracted 'Gold' Dataset Shape: {epochs_data.shape}")
-    print(f"Total Trials: {epochs_data.shape[0]}")
-    
-    # Save it identically to how calibrate.py would save it!
-    np.savez('calib_data.npz', epochs=epochs_data, labels=labels, fs=fs)
-    print("Saved successfully to calib_data.npz! It forcefully overwrote any existing data.")
-    print("You can now instantly run `train.py`, followed by `mock_eeg_stream.py` to watch your ship steer perfectly!")
+warnings.filterwarnings("ignore")
 
-if __name__ == "__main__":
+def main():
+    print("Initializing MOABB Motor Imagery paradigm...")
+    # MOABB MotorImagery paradigm will automatically handle fetching, 
+    # epoching, and filtering the data. We request our 3 specific categories:
+    paradigm = MotorImagery(n_classes=3, events=['left_hand', 'right_hand', 'rest'])
+    
+    # Schirrmeister2017 (High-Gamma Dataset) contains 128 channels at 250Hz!
+    # It includes right_hand, left_hand, rest, and feet. We drop feet.
+    dataset = Schirrmeister2017()
+    
+    print(f"Downloading/Extracting {dataset.code} gold dataset for Subject 1...")
+    print("(This might take a minute depending on your internet connection)")
+    
+    # Fetch data for subject 1
+    # X will be shape (epochs, channels, time)
+    # y will be string labels
+    X, y, meta = paradigm.get_data(dataset=dataset, subjects=[1])
+    
+    print(f"\nExtraction complete!")
+    print(f"Raw epochs shape: {X.shape}")
+    print(f"Discovered labels: {set(y)}")
+    
+    # calibrate.py maps classes to integers (LEFT=0, RIGHT=1, REST=2)
+    # We must format our gold data EXACTLY the same so train.py loads it smoothly.
+    label_map = {
+        'left_hand': 0,
+        'right_hand': 1,
+        'rest': 2
+    }
+    
+    # Convert string labels to numerical labels
+    y_mapped = np.array([label_map[label] for label in y])
+    
+    # IMPORTANT DATA SCALING:
+    # Unicorn LSL natively outputs in Microvolts (μV). So your calib_data.npz stores 
+    # large numbers (e.g., 15.4, 250.1). train.py expects this and explicitly multiples 
+    # by 1e-6 to convert back to Volts for internal MNE math.
+    # HOWEVER, MOABB provides data exactly in Volts (e.g., 0.0000154). 
+    # To prevent train.py from shrinking the data twice and creating micro-scale zeros, 
+    # we simulate the Unicorn hardware by converting MOABB Volts up to Microvolts first!
+    X_microvolts = X * 1e6
+    
+    # We use 250Hz, which matches both the Unicorn and the Schirrmeister dataset
+    fs = 250 
+    
+    output_file = 'calib_data.npz'
+    np.savez(output_file, epochs=X_microvolts, labels=y_mapped, fs=fs)
+    
+    print("\n------------------------------")
+    print(f"SUCCESS! Wrote {output_file}")
+    print(f"- Total Epochs: {len(y_mapped)}")
+    print(f"- Data Range (μV): {X_microvolts.min():.2f} to {X_microvolts.max():.2f}")
+    print(f"- Sampling rate: {fs} Hz")
+    print("------------------------------")
+    print("\nYou can now run 'python train.py' and your pipeline will train on real BCI Motor Imagery data!")
+
+if __name__ == '__main__':
     main()

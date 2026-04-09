@@ -62,16 +62,10 @@ public class CalibrationManager : MonoBehaviour
             string dir = "";
             if (trialQueue[i] == 0) dir = "<-";
             else if (trialQueue[i] == 1) dir = "->";
-            else dir = "HOLD";
-
+            else dir = "Stay relaxed";
             promptText.text = dir;
-            yield return new WaitForSeconds(1f); // Show cue timer before recording
+            yield return new WaitForSeconds(1f); // Cue timer shown for 1 second before recording
             
-            if (dir != "HOLD")
-            {
-                vehicleMover.MoveInXSeconds(dir, 4.0f);
-            }
-
             if (dir == "<-")
             {
                 markerStream.WriteMarker("LEFT_START");
@@ -84,7 +78,9 @@ public class CalibrationManager : MonoBehaviour
             {
                 markerStream.WriteMarker("REST_START");
             }
+
             yield return new WaitForSeconds(4.0f); // Task timer
+
             if (dir == "<-")
             {
                 markerStream.WriteMarker("LEFT_END");
@@ -97,7 +93,11 @@ public class CalibrationManager : MonoBehaviour
             {
                 markerStream.WriteMarker("REST_END");
             }
-            vehicleMover.ReturnToOrigin();
+
+            if (dir != "Stay relaxed")
+            {
+                vehicleMover.ReturnToOrigin();
+            }
         }
 
         promptText.text = "Done!";
