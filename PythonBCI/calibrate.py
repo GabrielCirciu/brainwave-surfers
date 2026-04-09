@@ -88,6 +88,7 @@ def main():
                 labels.append(current_trial_class)
                 is_recording = False
                 print(f"Epoch saved! Total epochs: {len(epochs_data)}")
+                print(trial_data)
             elif cmd == "CALIBRATION_END":
                 break
 
