@@ -12,6 +12,7 @@
 /[Uu]ser[Ss]ettings/
 *.log
 PythonBCI/calib_data.npz
+/PythonBCI/calib_data.npz
 
 # By default unity supports Blender asset imports, *.blend1 blender files do not need to be commited to version control.
 *.blend1

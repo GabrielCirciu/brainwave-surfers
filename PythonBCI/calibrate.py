@@ -106,9 +106,11 @@ def main():
     if len(epochs_data) > 0:
         epochs_arr = np.array(epochs_data)
         labels_arr = np.array(labels)
-        # set up so it creates new data file all the time from an increasing integer that can be read from a new file
-        # output_string = 'output_data_' + 
-        output_file = 'output_data.npz'
+        with open('output_data_version.txt', 'r') as f:
+            current_version = f.read()
+        output_file = 'output_data_' + current_version + '.npz'
+        with open('output_data_version.txt', 'w') as f:
+            f.write(str(int(current_version) + 1))
         np.savez(output_file, epochs=epochs_arr, labels=labels_arr, fs=sampling_frequency)
         print(f"Saved dataset to {output_file}, shape: {epochs_arr.shape}")
     else:
