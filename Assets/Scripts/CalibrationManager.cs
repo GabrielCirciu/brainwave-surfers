@@ -10,7 +10,7 @@ public class CalibrationManager : MonoBehaviour
     public TextMeshProUGUI promptText;
     
     [Header("Settings")]
-    public int trialsPerClass = 15;
+    private int trialsPerClass = 1;
     public float relaxDuration = 2.0f;
 
     [Header("Vehicle")]
