@@ -31,6 +31,12 @@ def main():
     # Get sampling rate and number of channels
     sampling_frequency = int(eeg_inlet.info().nominal_srate())
     # if sampling_frequency <= 0: sampling_frequency = 250
+    # Channels 0-7  : CF3, C3, CP3, Cz, CPz, CF4, C4, CP4
+    # Channels 8-10 : Accelerometer data (XYZ axes)
+    # Channels 11-13: Gyroscope data (XYZ axes)
+    # Channel  14   : Battery level
+    # Channel  15   : Sample counter (used to track dropped samples)
+    # Channel  16   : Validation indicator
     stream_channels = eeg_inlet.info().channel_count()
     print(f"Connected to streams. fs={sampling_frequency}, channels={stream_channels}")
 
@@ -103,6 +109,7 @@ def main():
                 break
 
     print("\nCalibration Complete!")
+
     if len(epochs_data) > 0:
         epochs_arr = np.array(epochs_data)
         labels_arr = np.array(labels)
@@ -111,8 +118,10 @@ def main():
         output_file = 'output_data_' + current_version + '.npz'
         with open('output_data_version.txt', 'w') as f:
             f.write(str(int(current_version) + 1))
+
         np.savez(output_file, epochs=epochs_arr, labels=labels_arr, fs=sampling_frequency)
         print(f"Saved dataset to {output_file}, shape: {epochs_arr.shape}")
+        
     else:
         print("No epochs were recorded.")
 
