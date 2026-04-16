@@ -44,13 +44,13 @@ public class CalibrationManager : MonoBehaviour
         }
 
         // Shuffle trial order
-        for (int i = 0; i < totalTrials; i++)
-        {
-            int temp = trialQueue[i];
-            int r = Random.Range(i, totalTrials);
-            trialQueue[i] = trialQueue[r];
-            trialQueue[r] = temp;
-        }
+        //for (int i = 0; i < totalTrials; i++)
+        //{
+        //    int temp = trialQueue[i];
+        //    int r = Random.Range(i, totalTrials);
+        //    trialQueue[i] = trialQueue[r];
+        //    trialQueue[r] = temp;
+        //}
 
         for (int i = 0; i < totalTrials; i++)
         {

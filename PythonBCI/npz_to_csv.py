@@ -3,7 +3,7 @@ import pandas as pd
 
 def main():
     try:
-        data = np.load('live_data.npz')
+        data = np.load('live_data_2.npz')
         chunks = data['chunk']
         timestamps = data['timestamps']
         
@@ -13,7 +13,10 @@ def main():
         combined_data = np.column_stack((timestamps, chunks))
         df = pd.DataFrame(combined_data, columns=columns)
         
-        output_file = 'live_data.csv'
+        with open('live_data_version.txt', 'r') as f:
+            current_version = f.read()
+        output_file = 'live_data_' + current_version + '.csv'
+
         df.to_csv(output_file, index=False)
         print(f"Successfully exported data to {output_file}")
         

@@ -98,12 +98,19 @@ def main():
     except KeyboardInterrupt:
         # Save all chunks and timestamps
         if all_samples:
+            # Check for output_data_version.txt and read the version from it
+            # then save npz with the appropriate version in the name
+            with open('PythonBCI\live_data_version.txt', 'r') as f:
+                current_version = f.read()
+            output_file = 'live_data_' + current_version + '.npz'
+            with open('PythonBCI\live_data_version.txt', 'w') as f:
+                f.write(str(int(current_version) + 1))
             # Flatten lists of chunks and timestamps into single consistent arrays
             all_chunks = np.concatenate([s[0] for s in all_samples], axis=0)
             all_ts = np.concatenate([s[1] for s in all_samples], axis=0)
             
-            np.savez('live_data.npz', chunk=all_chunks, timestamps=all_ts)
-            print(f"\n\nSaved {len(all_ts)} samples to live_data.npz")
+            np.savez(output_file, chunk=all_chunks, timestamps=all_ts)
+            print(f"\n\nSaved {len(all_ts)} samples to {output_file}")
         else:
             print("\n\nNo data collected to save.")
             

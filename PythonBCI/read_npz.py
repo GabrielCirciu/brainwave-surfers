@@ -8,8 +8,9 @@ print(data)
 lst = data.files
 print(lst)
 epoch=input()
-print(data[lst[0]][0][int(epoch)])
+print(data[lst[0]][int(epoch)])
 print(data[lst[1]][int(epoch)])
+print(data[lst[2]][int(epoch)])
 #for item in lst:
 #    print(item)
 #    print(data[item])

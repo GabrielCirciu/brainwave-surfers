@@ -6,7 +6,7 @@ def apply_filters(data, fs=250.0):
     # 1. Demean (Subtract the DC offset before filtering to avoid edge transients)
     data = data - np.mean(data)
     
-    # 2. Notch Filter (Remove 50Hz power line noise)
+    # 2. Notch Filter (Remove 50Hz power line noise), may be unnecessary due to the bandpass filter below
     # Most EEG software uses 50Hz for Europe/Asia or 60Hz for US.
     # We'll use 50Hz as it's the most common default for g.tec.
     f0 = 50.0
@@ -30,12 +30,18 @@ def apply_car(df, channels):
     """
     Common Average Reference (CAR):
     Subtracts the global average of all channels from each channel.
-    This is excellent for removing common-mode noise.
+    This is for removing common-mode noise.
     """
     channel_data = df[channels].values
     global_average = np.mean(channel_data, axis=1, keepdims=True)
     df[channels] = channel_data - global_average
     return df
+
+def apply_oscar():
+    """
+    Online Signal Conditioning and Artifact Removal (OSCAR)
+    """
+    return
 
 def process_csv(input_path, output_path):
     print(f"Reading {input_path}...")
