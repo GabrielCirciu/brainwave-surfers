@@ -32,4 +32,5 @@ def analyze_timestamps(file_path):
         print(f"An error occurred: {e}")
 
 if __name__ == "__main__":
-    analyze_timestamps('live_data.csv')
+    file_path = 'data/processed/live_data_2.csv'
+    analyze_timestamps(file_path)

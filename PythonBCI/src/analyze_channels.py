@@ -4,14 +4,10 @@ import numpy as np
 def analyze_channels(file_path):
     try:
         df = pd.read_csv(file_path)
-
-        # Extract all other columns except the first one
         channels = df.iloc[:, 1:].values
-        print(f"Channels shape: {channels.shape}")
-
         diffs = np.diff(channels)
         mean_diff = np.mean(diffs)
-        
+        print(f"Channels shape: {channels.shape}")
         print(f"Channel Analysis for {file_path}")
         print(f"Minimum Diff:   {np.min(diffs):.6f} s")
         print(f"Maximum Diff:   {np.max(diffs):.6f} s")
@@ -24,4 +20,5 @@ def analyze_channels(file_path):
         print(f"An error occurred: {e}")
 
 if __name__ == "__main__":
-    analyze_channels('live_data_2.csv')
+    file_path = 'data/processed/live_data_2.csv'
+    analyze_channels(file_path)
