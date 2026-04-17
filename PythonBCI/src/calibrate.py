@@ -28,15 +28,14 @@ def main():
             print("Still waiting for EEG stream... (Is GTec LSL running or mock stream active?)")
     eeg_inlet = StreamInlet(eeg_streams[-1]) # Grab the latest activated stream to avoid zombies
     
-    # Get sampling rate and number of channels
-    sampling_frequency = int(eeg_inlet.info().nominal_srate())
-    # if sampling_frequency <= 0: sampling_frequency = 250
+    # Get sampling rate and channels
     # Channels 0-7  : CF3, C3, CP3, Cz, CPz, CF4, C4, CP4
     # Channels 8-10 : Accelerometer data (XYZ axes)
     # Channels 11-13: Gyroscope data (XYZ axes)
     # Channel  14   : Battery level
     # Channel  15   : Sample counter (used to track dropped samples)
     # Channel  16   : Validation indicator
+    sampling_frequency = int(eeg_inlet.info().nominal_srate())
     stream_channels = eeg_inlet.info().channel_count()
     print(f"Connected to streams. fs={sampling_frequency}, channels={stream_channels}")
 
@@ -53,8 +52,9 @@ def main():
     print("\nStarting calibration...")
 
     while True:
+
         # 1. Pull EEG block
-        chunk, timestamps = eeg_inlet.pull_chunk(timeout=0.001)
+        chunk, timestamps = eeg_inlet.pull_chunk(timeout=0.1)
         if chunk:
             chunk_arr = np.array(chunk).T[:stream_channels, :]
             raw_stream.append(chunk_arr)
@@ -65,7 +65,8 @@ def main():
                 trial_chunks.append(chunk_arr)
 
         # 2. Check for markers
-        marker, mrk_ts = marker_inlet.pull_sample(timeout=0.001)
+        marker, marker_timestamps = marker_inlet.pull_sample(timeout=0.1)
+
         if marker:
             cmd = marker[0]
             print(f"Received Marker: {cmd}")
@@ -73,19 +74,23 @@ def main():
             if cmd == "LEFT_START":
                 is_recording = True
                 current_trial_class = 0
-                trial_chunks = [] # Start fresh
+                trial_chunks = [] # Start a fresh new chunk
+
             elif cmd == "RIGHT_START":
                 is_recording = True
                 current_trial_class = 1
                 trial_chunks = []
+
             elif cmd == "REST_START":
                 is_recording = True
                 current_trial_class = 2
                 trial_chunks = []
             
             elif cmd in ("LEFT_END", "RIGHT_END", "REST_END") and is_recording:
+
                 is_recording = False
                 if len(trial_chunks) > 0:
+
                     # Combine all chunks collected during the trial
                     trial_data = np.concatenate(trial_chunks, axis=1)
                     actual_length = trial_data.shape[1]
@@ -100,8 +105,10 @@ def main():
                 
                     epochs_data.append(trial_data)
                     labels.append(current_trial_class)
+
                     print(f"Epoch saved! Total epochs: {len(epochs_data)}")
                     print(f"Epoch Shape: {trial_data.shape} (Adjusted from raw length {actual_length})")
+                
                 else:
                     print("Warning: Received END marker but no EEG data was collected during the trial.")
             
@@ -111,12 +118,16 @@ def main():
     print("\nCalibration Complete!")
 
     if len(epochs_data) > 0:
+
         epochs_arr = np.array(epochs_data)
         labels_arr = np.array(labels)
-        with open('output_data_version.txt', 'r') as f:
+
+        with open('PythonBCI/data/config/output_data_version.txt', 'r') as f:
             current_version = f.read()
-        output_file = 'output_data_' + current_version + '.npz'
-        with open('output_data_version.txt', 'w') as f:
+
+        output_file = 'PythonBCI/data/raw/output_data_' + current_version + '.npz'
+
+        with open('PythonBCI/data/config/output_data_version.txt', 'w') as f:
             f.write(str(int(current_version) + 1))
 
         np.savez(output_file, epochs=epochs_arr, labels=labels_arr, fs=sampling_frequency)

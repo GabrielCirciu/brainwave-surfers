@@ -23,7 +23,7 @@ public class CalibrationManager : MonoBehaviour
 
     public void StartCalibration()
     {
-        Random.InitState(42);
+        Random.InitState(42); // Sets random seed. In the future we will have different seeds per trial
         StartCoroutine(CalibrationRoutine());
         CalibrationButton.SetActive(false);
         CalibrationPlayButton.SetActive(false);
@@ -56,24 +56,26 @@ public class CalibrationManager : MonoBehaviour
         for (int i = 0; i < totalTrials; i++)
         {
             promptText.text = "Relax";
-            relaxDuration = Random.Range(2.0f, 4.0f); // Random range of relax timer
+            relaxDuration = Random.Range(4, 9) * 0.5f; // Picks 2.0, 2.5, 3.0, 3.5, or 4.0
             yield return new WaitForSeconds(relaxDuration);
             promptText.text = "Ready...";
             yield return new WaitForSeconds(1.5f); // Get ready timer before showing cue
             string dir = "";
-            if (trialQueue[i] == 0) dir = "<-";
-            else if (trialQueue[i] == 1) dir = "->";
-            else dir = "Stay relaxed";
+            if (trialQueue[i] == 0) dir = "<-     ";
+            else if (trialQueue[i] == 1) dir = "     ->";
+            else dir = "Relax";
             promptText.text = dir;
             yield return new WaitForSeconds(1f); // Cue timer shown for 1 second before recording
             
-            if (dir == "<-")
+            if (dir == "<-     ")
             {
                 markerStream.WriteMarker("LEFT_START");
+                vehicleMover.MoveLeft();
             }
-            else if (dir == "->")
+            else if (dir == "     ->")
             {
                 markerStream.WriteMarker("RIGHT_START");
+                vehicleMover.MoveRight();
             }
             else
             {
@@ -82,22 +84,19 @@ public class CalibrationManager : MonoBehaviour
 
             yield return new WaitForSeconds(4.0f); // Task timer
 
-            if (dir == "<-")
+            if (dir == "<-     ")
             {
                 markerStream.WriteMarker("LEFT_END");
+                vehicleMover.ReturnToOrigin();
             }
-            else if (dir == "->")
+            else if (dir == "     ->")
             {
                 markerStream.WriteMarker("RIGHT_END");
+                vehicleMover.ReturnToOrigin();
             }
             else
             {
                 markerStream.WriteMarker("REST_END");
-            }
-
-            if (dir != "Stay relaxed")
-            {
-                vehicleMover.ReturnToOrigin();
             }
         }
 

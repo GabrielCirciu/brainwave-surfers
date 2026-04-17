@@ -6,6 +6,9 @@ import sys
 
 def main():
     # Enable ANSI escape sequences on Windows for flicker-free terminal updates
+    # Allows the cursor to be moved in any windows version in terminal
+    # This means we can overwrite the terminal texts without clearing it all the time
+    # Right now we don't use it but it might be useful in the future
     if os.name == 'nt':
         os.system('') 
 
@@ -18,7 +21,6 @@ def main():
         for i, s in enumerate(streams):
             print(f"Stream {i}: {s.name()} | Type: {s.type()} | Channels: {s.channel_count()}")
         
-        # Filter strictly for the EEG stream
         print("\nFiltering for EEG streams...")
         eeg_streams = [s for s in streams if s.type() == 'EEG']
         for s in eeg_streams:
@@ -28,10 +30,10 @@ def main():
             print("Still waiting for the EEG stream... (Make sure LSL is set to 'send each signal in one stream')")
             time.sleep(1)
     
-    print("\nPress any key to continue...")
+    # print("\nPress any key to continue...")
     # input()
 
-    # We might have old zombie streams that were not closed, and then we must use the one that is transmitting data.
+    # We might have zombie streams that were not closed, so we must use the one that is transmitting data.
     target_stream = None
     eeg_inlet = None
     
@@ -58,13 +60,12 @@ def main():
     
     print(f"\nConnected to active stream! channels={stream_channels}, fs={fs}Hz")
     print("Press Ctrl+C to stop.")
+
+    # Short wait helps collect stable data before starting to display it
     time.sleep(1)
     
     # Motor Imagery 8-channel labels for Unicorn EEG (CF3, C3, CP3, Cz, CPz, CF4, C4, CP4)
     labels = ["CF3", "C3", "CP3", "Cz", "CPz", "CF4", "C4", "CP4"]
-    
-    # Clear screen once before starting
-    # os.system('cls' if os.name == 'nt' else 'clear')
 
     all_samples = []
 
@@ -91,29 +92,34 @@ def main():
                         print(f"{label:>15}: {val:>10.3f}")
                 
             else:
-                print("Waiting for data chunk...")
+                print("No data chunk received. Retrying...")
                 
             time.sleep(1.0)  # Only print once a second so it doesn't spam too fast
             
     except KeyboardInterrupt:
+
         # Save all chunks and timestamps
         if all_samples:
+
             # Check for output_data_version.txt and read the version from it
             # then save npz with the appropriate version in the name
-            with open('PythonBCI\live_data_version.txt', 'r') as f:
+            with open('PythonBCI/data/config/live_data_version.txt', 'r') as f:
                 current_version = f.read()
-            output_file = 'live_data_' + current_version + '.npz'
-            with open('PythonBCI\live_data_version.txt', 'w') as f:
+
+            output_file = 'PythonBCI/data/raw/live_data_' + current_version + '.npz'
+            with open('PythonBCI/data/config/live_data_version.txt', 'w') as f:
                 f.write(str(int(current_version) + 1))
+
             # Flatten lists of chunks and timestamps into single consistent arrays
             all_chunks = np.concatenate([s[0] for s in all_samples], axis=0)
             all_ts = np.concatenate([s[1] for s in all_samples], axis=0)
-            
+
             np.savez(output_file, chunk=all_chunks, timestamps=all_ts)
             print(f"\n\nSaved {len(all_ts)} samples to {output_file}")
+
         else:
             print("\n\nNo data collected to save.")
-            
+
         print("Stopped live monitor.")
 
 if __name__ == '__main__':

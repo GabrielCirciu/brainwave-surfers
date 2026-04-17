@@ -12,6 +12,18 @@ public class VehicleMover : MonoBehaviour
         currentMoveCoroutine = StartCoroutine(MoveToPositionCoroutine(targetPos, seconds));
     }
 
+    public void MoveLeft()
+    {
+        if (currentMoveCoroutine != null) StopCoroutine(currentMoveCoroutine);
+        currentMoveCoroutine = StartCoroutine(MoveToPositionCoroutine(new Vector3(-7f, transform.position.y, transform.position.z), 4.0f));
+    }
+
+    public void MoveRight()
+    {
+        if (currentMoveCoroutine != null) StopCoroutine(currentMoveCoroutine);
+        currentMoveCoroutine = StartCoroutine(MoveToPositionCoroutine(new Vector3(7f, transform.position.y, transform.position.z), 4.0f));
+    }
+
     public void ReturnToOrigin()
     {
         if (currentMoveCoroutine != null) StopCoroutine(currentMoveCoroutine);

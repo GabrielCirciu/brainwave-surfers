@@ -32,5 +32,6 @@ def analyze_timestamps(file_path):
         print(f"An error occurred: {e}")
 
 if __name__ == "__main__":
-    file_path = 'data/processed/live_data_2.csv'
+    csv_file = input("Enter the CSV file name: ")
+    file_path = 'PythonBCI/data/processed/' + csv_file
     analyze_timestamps(file_path)
