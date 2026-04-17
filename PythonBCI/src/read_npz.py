@@ -1,7 +1,7 @@
 import sys
 import numpy as np
 from numpy import load
-document = "PythonBCI/data/raw/gold_data.npz"
+document = "PythonBCI\\data\\raw\\output_data_5.npz"
 #document=input() 
 np.set_printoptions(threshold=sys.maxsize)
 data = load(document)

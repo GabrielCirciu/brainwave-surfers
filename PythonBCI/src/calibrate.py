@@ -18,16 +18,61 @@ def main():
     print("Found UnityMarkers stream!")
 
     # Get EEG stream
+    # print("Looking for EEG stream...")
+    # eeg_streams = []
+    # while not eeg_streams:
+    #     streams = resolve_streams(3.0)
+    #     valid_names = ['UN-2024.08.41', 'Unicorn', 'UnicornRecorderLSLStream', 'UnicornMock']
+    #     eeg_streams = [s for s in streams if s.name() in valid_names or s.name().startswith('UN-2024.08.41') or s.type() == 'Data']
+    #     if len(eeg_streams) == 0:
+    #         print("Still waiting for EEG stream... (Is GTec LSL running or mock stream active?)")
+    # eeg_inlet = StreamInlet(eeg_streams[-1]) # Grab the latest activated stream to avoid zombies
+    
     print("Looking for EEG stream...")
     eeg_streams = []
     while not eeg_streams:
-        streams = resolve_streams(3.0)
-        valid_names = ['UN-2024.08.41', 'Unicorn', 'UnicornRecorderLSLStream', 'UnicornMock']
-        eeg_streams = [s for s in streams if s.name() in valid_names or s.name().startswith('UN-2024.08.41') or s.type() == 'EEG']
+        streams = resolve_streams()
+        
+        print("\nFound the following streams on the network")
+        for i, s in enumerate(streams):
+            print(f"Stream {i}: {s.name()} | Type: {s.type()} | Channels: {s.channel_count()}")
+        
+        print("\nFiltering for Data streams...")
+        eeg_streams = [s for s in streams if s.type() == 'Data']
+        for s in eeg_streams:
+            print(f"Found Data stream '{s.name()}'...")
+        
         if len(eeg_streams) == 0:
-            print("Still waiting for EEG stream... (Is GTec LSL running or mock stream active?)")
-    eeg_inlet = StreamInlet(eeg_streams[-1]) # Grab the latest activated stream to avoid zombies
+            print("Still waiting for the Data stream... (Make sure LSL is set to 'send all signals in one stream')")
+            time.sleep(1)
+
+    # We might have zombie streams that were not closed, so we must use the one that is transmitting data.
+    target_stream = None
+    eeg_inlet = None
+
+    print("\nTesting streams for active data...")
+    for s in reversed(eeg_streams):
+        print(f"Testing stream '{s.name()}'...")
+        inlet = StreamInlet(s)
+        chunk, test_timestamp = inlet.pull_chunk(timeout=0.1, max_samples=250)
+        
+        if chunk:
+            print("Success! Data is flowing.")
+            target_stream = s
+            eeg_inlet = inlet
+            break
+        else:
+            print("No data. This is a zombie stream from earlier.")
+            
+    if target_stream is None:
+        print("\nERROR: All located 8-channel streams are dead. Please restart the EEG, LSL stream, and then restart this process!")
+        return
+        
+    stream_channels = eeg_inlet.info().channel_count()
+    fs = int(eeg_inlet.info().nominal_srate())
     
+    print(f"\nConnected to active stream! channels={stream_channels}, fs={fs}Hz")
+
     # Get sampling rate and channels
     # Channels 0-7  : CF3, C3, CP3, Cz, CPz, CF4, C4, CP4
     # Channels 8-10 : Accelerometer data (XYZ axes)
@@ -57,6 +102,7 @@ def main():
         chunk, timestamps = eeg_inlet.pull_chunk(timeout=0.1)
         if chunk:
             chunk_arr = np.array(chunk).T[:stream_channels, :]
+            # chunk_arr = np.array(chunk)
             raw_stream.append(chunk_arr)
             global_sample_count += chunk_arr.shape[1]
             
