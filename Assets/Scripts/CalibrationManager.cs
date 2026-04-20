@@ -8,10 +8,6 @@ public class CalibrationManager : MonoBehaviour
     [Header("LSL")]
     public LSLMarkerStream markerStream;
     public TextMeshProUGUI promptText;
-    
-    [Header("Settings")]
-    private int trialsPerClass = 1;
-    public float relaxDuration = 2.0f;
 
     [Header("Vehicle")]
     [SerializeField] private VehicleMover vehicleMover;
@@ -20,6 +16,9 @@ public class CalibrationManager : MonoBehaviour
     [SerializeField] private GameObject CalibrationText;
     [SerializeField] private GameObject CalibrationPlayButton;
     [SerializeField] private GameObject ScoreCanvas;
+
+    private int trialsPerClass = 1;
+    private float relaxDuration = 2.0f;
 
     public void StartCalibration()
     {
@@ -35,13 +34,12 @@ public class CalibrationManager : MonoBehaviour
         promptText.text = "Starting soon...";
         yield return new WaitForSeconds(5f);
 
-        int totalTrials = trialsPerClass * 3;
+        int totalTrials = trialsPerClass * 2;
         int[] trialQueue = new int[totalTrials];
         for (int i = 0; i < trialsPerClass; i++)
         {
             trialQueue[i] = 0; // Left
             trialQueue[i + trialsPerClass] = 1; // Right
-            trialQueue[i + (2 * trialsPerClass)] = 2; // Rest
         }
 
         // Shuffle trial order
@@ -61,42 +59,33 @@ public class CalibrationManager : MonoBehaviour
             promptText.text = "Ready...";
             yield return new WaitForSeconds(1.5f); // Get ready timer before showing cue
             string dir = "";
-            if (trialQueue[i] == 0) dir = "<-     ";
-            else if (trialQueue[i] == 1) dir = "     ->";
-            else dir = "Relax";
+            if (trialQueue[i] == 0) dir = "< -        ";
+            else if (trialQueue[i] == 1) dir = "        - >";
             promptText.text = dir;
             yield return new WaitForSeconds(1f); // Cue timer shown for 1 second before recording
             
-            if (dir == "<-     ")
+            if (dir == "< -        ")
             {
                 markerStream.WriteMarker("LEFT_START");
                 vehicleMover.MoveLeft();
             }
-            else if (dir == "     ->")
+            else if (dir == "        - >")
             {
                 markerStream.WriteMarker("RIGHT_START");
                 vehicleMover.MoveRight();
             }
-            else
-            {
-                markerStream.WriteMarker("REST_START");
-            }
 
             yield return new WaitForSeconds(4.0f); // Task timer
 
-            if (dir == "<-     ")
+            if (dir == "< -        ")
             {
                 markerStream.WriteMarker("LEFT_END");
                 vehicleMover.ReturnToOrigin();
             }
-            else if (dir == "     ->")
+            else if (dir == "        - >")
             {
                 markerStream.WriteMarker("RIGHT_END");
                 vehicleMover.ReturnToOrigin();
-            }
-            else
-            {
-                markerStream.WriteMarker("REST_END");
             }
         }
 

@@ -1,6 +1,7 @@
 import numpy as np
 from pylsl import StreamInlet, resolve_byprop, resolve_streams
 import time
+from datetime import datetime
 import os
 
 BUFFER_DUR = 4.0
@@ -16,17 +17,6 @@ def main():
             print("Still waiting for UnityMarkers stream... (Is Unity in Play Mode?)")
     marker_inlet = StreamInlet(marker_streams[0])
     print("Found UnityMarkers stream!")
-
-    # Get EEG stream
-    # print("Looking for EEG stream...")
-    # eeg_streams = []
-    # while not eeg_streams:
-    #     streams = resolve_streams(3.0)
-    #     valid_names = ['UN-2024.08.41', 'Unicorn', 'UnicornRecorderLSLStream', 'UnicornMock']
-    #     eeg_streams = [s for s in streams if s.name() in valid_names or s.name().startswith('UN-2024.08.41') or s.type() == 'Data']
-    #     if len(eeg_streams) == 0:
-    #         print("Still waiting for EEG stream... (Is GTec LSL running or mock stream active?)")
-    # eeg_inlet = StreamInlet(eeg_streams[-1]) # Grab the latest activated stream to avoid zombies
     
     print("Looking for EEG stream...")
     eeg_streams = []
@@ -86,13 +76,16 @@ def main():
 
     # Data storage
     BUFFER_SAMPLES = int(sampling_frequency * BUFFER_DUR)
-    epochs_data = []
+    epochs_eeg = []
+    epochs_aux = []
+    epochs_timestamps = []
     labels = []
-    raw_stream = []
+    
     global_sample_count = 0
     current_trial_class = -1
     is_recording = False
     trial_chunks = []
+    trial_timestamps = []
 
     print("\nStarting calibration...")
 
@@ -101,14 +94,15 @@ def main():
         # 1. Pull EEG block
         chunk, timestamps = eeg_inlet.pull_chunk(timeout=0.1)
         if chunk:
-            chunk_arr = np.array(chunk).T[:stream_channels, :]
-            # chunk_arr = np.array(chunk)
-            raw_stream.append(chunk_arr)
-            global_sample_count += chunk_arr.shape[1]
+            chunk_arr = np.array(chunk)[:, :stream_channels] # Shape: (samples, channels)
+            ts_arr = np.array(timestamps)
+            
+            global_sample_count += chunk_arr.shape[0]
             
             # If we are in a trial, accumulate the chunks!
             if is_recording:
                 trial_chunks.append(chunk_arr)
+                trial_timestamps.append(ts_arr)
 
         # 2. Check for markers
         marker, marker_timestamps = marker_inlet.pull_sample(timeout=0.1)
@@ -120,40 +114,50 @@ def main():
             if cmd == "LEFT_START":
                 is_recording = True
                 current_trial_class = 0
-                trial_chunks = [] # Start a fresh new chunk
+                trial_chunks = [] 
+                trial_timestamps = []
 
             elif cmd == "RIGHT_START":
                 is_recording = True
                 current_trial_class = 1
                 trial_chunks = []
-
-            elif cmd == "REST_START":
-                is_recording = True
-                current_trial_class = 2
-                trial_chunks = []
+                trial_timestamps = []
             
-            elif cmd in ("LEFT_END", "RIGHT_END", "REST_END") and is_recording:
+            elif cmd in ("LEFT_END", "RIGHT_END") and is_recording:
 
                 is_recording = False
                 if len(trial_chunks) > 0:
 
                     # Combine all chunks collected during the trial
-                    trial_data = np.concatenate(trial_chunks, axis=1)
-                    actual_length = trial_data.shape[1]
+                    trial_data = np.concatenate(trial_chunks, axis=0)
+                    trial_ts = np.concatenate(trial_timestamps, axis=0)
+                    actual_length = trial_data.shape[0]
                     
                     # Ensure uniform lengths for ML models (e.g. exactly 4 seconds)
                     # If it's too long, truncate it. If it's too short, pad with the last edge value
                     if actual_length >= BUFFER_SAMPLES:
-                        trial_data = trial_data[:, :BUFFER_SAMPLES]
+                        trial_data = trial_data[:BUFFER_SAMPLES, :]
+                        trial_ts = trial_ts[:BUFFER_SAMPLES]
                     else:
                         pad_width = BUFFER_SAMPLES - actual_length
-                        trial_data = np.pad(trial_data, ((0, 0), (0, pad_width)), mode='edge')
+                        trial_data = np.pad(trial_data, ((0, pad_width), (0, 0)), mode='edge')
+                        trial_ts = np.pad(trial_ts, (0, pad_width), mode='edge')
                 
-                    epochs_data.append(trial_data)
+                    # Split the channels: 0-7 are EEG, 8-16 are AUX (accelerometer, gyro, battery, etc.)
+                    eeg_data = trial_data[:, :8]
+                    aux_data = trial_data[:, 8:17]
+                    
+                    # Append timestamp to the last column of aux_data (making it 10 columns)
+                    ts_col = trial_ts.reshape(-1, 1)
+                    aux_data_with_ts = np.hstack((aux_data, ts_col))
+                    
+                    epochs_eeg.append(eeg_data)
+                    epochs_aux.append(aux_data_with_ts)
+                    epochs_timestamps.append(trial_ts)
                     labels.append(current_trial_class)
 
-                    print(f"Epoch saved! Total epochs: {len(epochs_data)}")
-                    print(f"Epoch Shape: {trial_data.shape} (Adjusted from raw length {actual_length})")
+                    print(f"Epoch saved! Total epochs: {len(epochs_eeg)}")
+                    print(f"EEG Shape: {eeg_data.shape} | AUX Shape: {aux_data_with_ts.shape}")
                 
                 else:
                     print("Warning: Received END marker but no EEG data was collected during the trial.")
@@ -163,21 +167,20 @@ def main():
 
     print("\nCalibration Complete!")
 
-    if len(epochs_data) > 0:
+    if len(epochs_eeg) > 0:
 
-        epochs_arr = np.array(epochs_data)
+        eeg_arr = np.array(epochs_eeg)
+        aux_arr = np.array(epochs_aux)
+        ts_arr = np.array(epochs_timestamps)
         labels_arr = np.array(labels)
 
-        with open('PythonBCI/data/config/output_data_version.txt', 'r') as f:
-            current_version = f.read()
-
+        # Check todays date and time and set current version to that.
+        current_version = datetime.now().strftime("%Y%m%d_%H%M")
         output_file = 'PythonBCI/data/raw/output_data_' + current_version + '.npz'
-
-        with open('PythonBCI/data/config/output_data_version.txt', 'w') as f:
-            f.write(str(int(current_version) + 1))
-
-        np.savez(output_file, epochs=epochs_arr, labels=labels_arr, fs=sampling_frequency)
-        print(f"Saved dataset to {output_file}, shape: {epochs_arr.shape}")
+        np.savez(output_file, eeg=eeg_arr, aux=aux_arr, labels=labels_arr)
+        
+        print(f"Saved dataset to {output_file}")
+        print(f"Shapes - EEG: {eeg_arr.shape}, Labels: {labels_arr.shape}")
         
     else:
         print("No epochs were recorded.")
