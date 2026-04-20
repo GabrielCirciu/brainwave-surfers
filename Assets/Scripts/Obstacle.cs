@@ -2,8 +2,14 @@ using UnityEngine;
 
 public class Obstacle : MonoBehaviour
 {
+    [SerializeField] private VehicleMover vehicleMover;
     private float moveSpeed = 10.0f;
     private float despawnZ = -10.0f;
+
+    void Start()
+    {
+        vehicleMover = FindFirstObjectByType<VehicleMover>();
+    }
 
     public void SetSpeed(float speed)
     {
@@ -19,6 +25,7 @@ public class Obstacle : MonoBehaviour
         if (transform.position.z <= despawnZ)
         {
             ScoreManager.Instance.AddPoint();
+            vehicleMover.MoveToOrigin(0.5f);
             Destroy(gameObject);
         }
     }

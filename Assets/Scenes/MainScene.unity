@@ -26,7 +26,7 @@ RenderSettings:
   m_AmbientIntensity: 1
   m_AmbientMode: 0
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
-  m_SkyboxMaterial: {fileID: 10304, guid: 0000000000000000f000000000000000, type: 0}
+  m_SkyboxMaterial: {fileID: 2100000, guid: 0dff7fdcb8b9e0b4ea72e96a61121061, type: 2}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
   m_FlareFadeSpeed: 3
@@ -612,7 +612,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 1
-  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
+  m_BackGroundColor: {r: 0, g: 0, b: 0, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -661,13 +661,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 330585543}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.13052616, y: 0, z: 0, w: 0.9914449}
-  m_LocalPosition: {x: 0, y: 10, z: -15}
+  m_LocalRotation: {x: 0.2588191, y: 0, z: 0, w: 0.9659258}
+  m_LocalPosition: {x: 0, y: 30, z: -30}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 15, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 30, y: 0, z: 0}
 --- !u!114 &330585547
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -722,6 +722,7 @@ GameObject:
   m_Component:
   - component: {fileID: 340688334}
   - component: {fileID: 340688333}
+  - component: {fileID: 340688335}
   m_Layer: 0
   m_Name: ObstacleSpawner
   m_TagString: Untagged
@@ -742,6 +743,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ObstacleSpawner
   obstaclePrefab: {fileID: 2307881145447987514, guid: 47f37494d659e23448bd5ea6f1e6cd84, type: 3}
+  markerStream: {fileID: 340688335}
 --- !u!4 &340688334
 Transform:
   m_ObjectHideFlags: 0
@@ -757,6 +759,18 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &340688335
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 340688332}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4efdc716c7104a4ebb8d390d831277a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LSLMarkerStream
 --- !u!1 &410087039
 GameObject:
   m_ObjectHideFlags: 0
@@ -969,8 +983,8 @@ Transform:
   m_GameObject: {fileID: 452072683}
   serializedVersion: 2
   m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 0, y: 0, z: 280}
-  m_LocalScale: {x: 70, y: 300, z: 30}
+  m_LocalPosition: {x: 0, y: 0, z: 200}
+  m_LocalScale: {x: 80, y: 250, z: 100}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -1094,7 +1108,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: db5759210703b9d4fb5cffc768c02da2, type: 3}
       propertyPath: m_LocalScale.x
-      value: 50
+      value: 75
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: db5759210703b9d4fb5cffc768c02da2, type: 3}
       propertyPath: m_LocalScale.y
@@ -1234,10 +1248,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 83532c4a571221d4982ad133a9510d36, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VehicleController
-  lslReceiver: {fileID: 1599902541}
-  leftChannelIndex: 0
-  rightChannelIndex: 1
-  threshold: 0.5
+  vehicleMover: {fileID: 658979919}
 --- !u!114 &658979919
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2218,8 +2229,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CalibrationManager
   markerStream: {fileID: 1222418019}
   promptText: {fileID: 1012875185}
-  trialsPerClass: 15
-  relaxDuration: 2
   vehicleMover: {fileID: 658979919}
   MainMenuPanel: {fileID: 1174671259}
   CalibrationButton: {fileID: 1458079581}
@@ -2248,6 +2257,37 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 1323.0298, y: 1067.1914, z: -5.84202}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1228861885
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1228861886}
+  m_Layer: 0
+  m_Name: DistanceMarker
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1228861886
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1228861885}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: -0, z: 100}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2283,7 +2323,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 972b649e2adefdf4da4280c11475e52e, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 500
+      value: 400
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 972b649e2adefdf4da4280c11475e52e, type: 3}
       propertyPath: m_LocalRotation.w
@@ -2335,7 +2375,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 972b649e2adefdf4da4280c11475e52e, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6518604550631796776, guid: 972b649e2adefdf4da4280c11475e52e, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
@@ -2975,11 +3015,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b35aa2ebd3124f74dbfe847e9c1f17cd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LSLReceiver
-  StreamName: BCIPredictor
-  StreamType: Markers
-  moment: 0
-  ProcessLastInChunkOnly: 0
-  resolver: {fileID: 0}
 --- !u!4 &1599902542
 Transform:
   m_ObjectHideFlags: 0
@@ -3933,3 +3968,4 @@ SceneRoots:
   - {fileID: 1599902542}
   - {fileID: 1986941089}
   - {fileID: 652069766}
+  - {fileID: 1228861886}

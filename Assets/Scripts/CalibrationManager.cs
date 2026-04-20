@@ -67,12 +67,12 @@ public class CalibrationManager : MonoBehaviour
             if (dir == "< -        ")
             {
                 markerStream.WriteMarker("LEFT_START");
-                vehicleMover.MoveLeft();
+                vehicleMover.MoveLeft(4.0f);
             }
             else if (dir == "        - >")
             {
                 markerStream.WriteMarker("RIGHT_START");
-                vehicleMover.MoveRight();
+                vehicleMover.MoveRight(4.0f);
             }
 
             yield return new WaitForSeconds(4.0f); // Task timer
