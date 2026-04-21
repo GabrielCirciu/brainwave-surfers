@@ -66,4 +66,16 @@ public class GameManager : MonoBehaviour
             LSLReceiver.SetActive(true);
         }
     }
+
+    public void onToggleFullscreen()
+    {
+        if (Screen.fullScreenMode == FullScreenMode.Windowed)
+        {
+            Screen.fullScreenMode = FullScreenMode.FullScreenWindow;
+        }
+        else
+        {
+            Screen.fullScreenMode = FullScreenMode.Windowed;
+        }
+    }
 }
