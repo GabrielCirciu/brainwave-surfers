@@ -109,7 +109,7 @@ def main():
 
         if marker:
             cmd = marker[0]
-            print(f"\nReceived Marker: {cmd}")
+            print(f"Received Marker: {cmd}")
             
             if cmd == "LEFT_START":
                 is_recording = True
@@ -156,11 +156,11 @@ def main():
                     epochs_timestamps.append(trial_ts)
                     labels.append(current_trial_class)
 
-                    print(f"Epoch saved! Total epochs: {len(epochs_eeg)}")
-                    print(f"EEG Shape: {eeg_data.shape} | AUX Shape: {aux_data_with_ts.shape} | Label: {current_trial_class}")
+                    print(f"\nEpoch saved! Total epochs: {len(epochs_eeg)}")
+                    print(f"EEG Shape: {eeg_data.shape} | AUX Shape: {aux_data_with_ts.shape} | Label: {current_trial_class}\n")
                 
                 else:
-                    print("Warning: Received END marker but no EEG data was collected during the trial.")
+                    print("\nWarning: Received END marker but no EEG data was collected during the trial.")
             
             elif cmd == "CALIBRATION_END":
                 break
