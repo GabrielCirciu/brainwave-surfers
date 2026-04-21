@@ -109,7 +109,7 @@ def main():
 
         if marker:
             cmd = marker[0]
-            print(f"Received Marker: {cmd}")
+            print(f"\nReceived Marker: {cmd}")
             
             if cmd == "LEFT_START":
                 is_recording = True
@@ -157,7 +157,7 @@ def main():
                     labels.append(current_trial_class)
 
                     print(f"Epoch saved! Total epochs: {len(epochs_eeg)}")
-                    print(f"EEG Shape: {eeg_data.shape} | AUX Shape: {aux_data_with_ts.shape}")
+                    print(f"EEG Shape: {eeg_data.shape} | AUX Shape: {aux_data_with_ts.shape} | Label: {current_trial_class}")
                 
                 else:
                     print("Warning: Received END marker but no EEG data was collected during the trial.")
@@ -180,7 +180,7 @@ def main():
         np.savez(output_file, eeg=eeg_arr, aux=aux_arr, labels=labels_arr)
         
         print(f"Saved dataset to {output_file}")
-        print(f"Shapes - EEG: {eeg_arr.shape}, Labels: {labels_arr.shape}")
+        print(f"Shapes - EEG: {eeg_arr.shape}, AUX: {aux_arr.shape}, Labels: {labels_arr.shape}")
         
     else:
         print("No epochs were recorded.")
