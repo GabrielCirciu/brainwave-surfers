@@ -4,3 +4,4 @@ pylsl
 numpy
 scipy
 moabb
+pyautogui
