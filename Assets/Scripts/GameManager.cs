@@ -78,4 +78,12 @@ public class GameManager : MonoBehaviour
             Screen.fullScreenMode = FullScreenMode.Windowed;
         }
     }
+
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            onEndGame();
+        }
+    }
 }
