@@ -17,7 +17,7 @@ public class CalibrationManager : MonoBehaviour
     [SerializeField] private GameObject CalibrationPlayButton;
     [SerializeField] private GameObject ScoreCanvas;
 
-    private int trialsPerClass = 30;
+    private int trialsPerClass = 50;
     private float relaxDuration = 3.0f;
 
     public void StartCalibration()
