@@ -86,12 +86,16 @@ def main():
                     
                     if cmd == "OBSTACLE_LEFT":
                         print(f"\nReceived marker: {cmd}")
-                        target_trials = left_trials
-                        target_label_name = "LEFT"
-                    elif cmd == "OBSTACLE_RIGHT":
-                        print(f"\nReceived marker: {cmd}")
+                        print(f"Sending signal: RIGHT")
+                        # Obstacle is on the left -> dodge RIGHT
                         target_trials = right_trials
                         target_label_name = "RIGHT"
+                    elif cmd == "OBSTACLE_RIGHT":
+                        print(f"\nReceived marker: {cmd}")
+                        print(f"Sending signal: LEFT")
+                        # Obstacle is on the right -> dodge LEFT
+                        target_trials = left_trials
+                        target_label_name = "LEFT"
                     
                     if target_trials is not None:
                         if len(target_trials) == 0:
