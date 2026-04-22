@@ -4,4 +4,7 @@ pylsl
 numpy
 scipy
 moabb
-pyautogui
+os
+sys
+pickle
+pydirectinput
