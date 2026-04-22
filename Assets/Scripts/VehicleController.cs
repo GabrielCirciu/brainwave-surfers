@@ -14,11 +14,11 @@ public class VehicleController : MonoBehaviour
         // Using legacy input to be compatible with GTec
         if (Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.A))
         {
-            vehicleMover.MoveLeft(0.5f);
+            vehicleMover.MoveLeft(0.25f);
         }
         else if (Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.D))
         {
-            vehicleMover.MoveRight(0.5f);
+            vehicleMover.MoveRight(0.25f);
         }
 
     }

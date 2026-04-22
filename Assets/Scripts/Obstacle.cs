@@ -3,12 +3,14 @@ using UnityEngine;
 public class Obstacle : MonoBehaviour
 {
     [SerializeField] private VehicleMover vehicleMover;
+    [SerializeField] private LifeManager lifeManager;
     private float moveSpeed = 10.0f;
     private float despawnZ = -10.0f;
 
     void Start()
     {
         vehicleMover = FindFirstObjectByType<VehicleMover>();
+        lifeManager = FindFirstObjectByType<LifeManager>();
     }
 
     public void SetSpeed(float speed)
@@ -33,6 +35,9 @@ public class Obstacle : MonoBehaviour
     // Check if collided with the player
     void OnTriggerEnter(Collider objectCollider)
     {
-        ScoreManager.Instance.EndGame();
+        Debug.Log("Collision!");
+        lifeManager.LoseLife();
+        Destroy(gameObject);
+        vehicleMover.MoveToOrigin(0.5f);
     }
 }

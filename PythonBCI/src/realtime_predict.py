@@ -4,7 +4,7 @@ import time
 import pickle
 import mne
 import sys
-import pyautogui
+import pydirectinput
 
 def main():
     try:
@@ -161,10 +161,14 @@ def main():
                         # 6. Simulate Keypress
                         if predicted_class == 0:
                             print(f"PREDICTION: Left  (L: {probs[0]:.2f} | R: {probs[1]:.2f}) -> Pressing 'left' key!\n")
-                            pyautogui.press('left')
+                            pydirectinput.keyDown('left')
+                            time.sleep(0.05)
+                            pydirectinput.keyUp('left')
                         else:
                             print(f"PREDICTION: Right (L: {probs[0]:.2f} | R: {probs[1]:.2f}) -> Pressing 'right' key!\n")
-                            pyautogui.press('right')
+                            pydirectinput.keyDown('right')
+                            time.sleep(0.05)
+                            pydirectinput.keyUp('right')
                             
                         print("Waiting for next marker...\n")
                     else:

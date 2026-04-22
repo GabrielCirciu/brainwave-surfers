@@ -47,8 +47,16 @@ public class ObstacleSpawner : MonoBehaviour
         {
             if (markerStream != null)
             {
-                markerStream.WriteMarker("PREDICT_START");
-                Debug.Log("PREDICT_START marker sent!");
+                if (!isLeftLane) // Weirdly it's the other way around
+                {
+                    markerStream.WriteMarker("OBSTACLE_LEFT");
+                    Debug.Log("OBSTACLE_LEFT marker sent!");
+                }
+                else
+                {
+                    markerStream.WriteMarker("OBSTACLE_RIGHT");
+                    Debug.Log("OBSTACLE_RIGHT marker sent!");
+                }
             }
             else
             {

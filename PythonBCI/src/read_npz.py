@@ -1,13 +1,13 @@
 import sys
 import numpy as np
+import os
 from numpy import load
 
 np.set_printoptions(threshold=sys.maxsize)
 
-the_file = "output_data_20260420_1150.npz"
-# the_file = input("Enter the file name: ")
-document = "PythonBCI\\data\\raw\\" + the_file
-data = load(document)
+the_file =  os.path.join("PythonBCI", "data", "raw", "gold-data", "subject_1", "batch_0.npz")
+
+data = load(the_file)
 lst = data.files
 
 print('\nData: ', data)
