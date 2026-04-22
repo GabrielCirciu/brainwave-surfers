@@ -5,14 +5,16 @@ import pickle
 import mne
 import sys
 import pydirectinput
+import os
 
 def main():
+    model_path = os.path.join("PythonBCI", "models", "model.pkl")
     try:
-        with open('model.pkl', 'rb') as f:
+        with open(model_path, 'rb') as f:
             clf = pickle.load(f)
-        print("Loaded model.pkl successfully.")
+        print(f"Loaded {model_path} successfully.")
     except FileNotFoundError:
-        print("model.pkl not found!")
+        print(f"Error: {model_path} not found!")
         sys.exit(1)
 
 
@@ -62,14 +64,17 @@ def main():
     print(f"\nConnected to active stream! channels={stream_channels}, fs={fs}Hz")
 
     # Setting up the UnityMarkers connection to receive triggers
-    print("Looking for UnityMarkers stream... (Make sure Unity is Playing!)")
+    print("\nLooking for UnityMarkers stream... (Make sure Unity is Playing!)")
     marker_streams = []
     while not marker_streams:
-        marker_streams = resolve_byprop('name', 'UnityMarkers', 1, 3.0)
+        marker_streams = resolve_byprop('name', 'UnityMarkersObstacles', 1, 3.0)
         if len(marker_streams) == 0:
             print("Still waiting for UnityMarkers stream...")
-    marker_inlet = StreamInlet(marker_streams[0])
-    print("Found UnityMarkers stream!")
+            time.sleep(1)
+            
+    # Connect to ALL found UnityMarkers streams (in case there are multiple in the scene)
+    marker_inlets = [StreamInlet(info) for info in marker_streams]
+    print(f"Connected to {len(marker_inlets)} UnityMarkers stream(s)!")
     
     # Real-time processing parameters
     # The model was trained on 4-second epochs. 
@@ -88,11 +93,22 @@ def main():
     
     try:
         while True:
-            # 1. Listen for marker from Unity
-            marker, _ = marker_inlet.pull_sample(timeout=0.0)
+            # We poll all active marker inlets
+            for inlet in marker_inlets:
+                try:
+                    marker, _ = inlet.pull_sample(timeout=0.0)
+                except Exception as e:
+                    # If one stream dies, we just ignore it. 
+                    # Unity might have destroyed an object but kept the game running.
+                    continue
+
+                if marker:
+                    cmd = marker[0]
+                    break
+
             if marker:
                 cmd = marker[0]
-                if cmd == "PREDICT_START":
+                if cmd == "OBSTACLE_LEFT" or cmd == "OBSTACLE_RIGHT":
                     print(f"Received marker: {cmd} - Starting 4-second collection!")
                     is_collecting = True
                     trial_chunks = []
@@ -123,6 +139,9 @@ def main():
                         
                         # Ensure uniform lengths for ML models (e.g. exactly 4 seconds)
                         # If it's too long, truncate it. If it's too short, pad with the last edge value
+                        if actual_length < BUFFER_SAMPLES * 0.9:
+                            print(f"WARNING: Only collected {actual_length} samples ({actual_length/fs:.2f}s) instead of {BUFFER_SAMPLES} samples (4.0s). LSL stream might be dropping packets!")
+                            
                         if actual_length >= BUFFER_SAMPLES:
                             trial_data = trial_data[:BUFFER_SAMPLES, :]
                             trial_ts = trial_ts[:BUFFER_SAMPLES]
@@ -153,6 +172,8 @@ def main():
                         X_epochs.crop(tmin=0.5)
                         
                         X_filtered = X_epochs.get_data(copy=True)
+                        
+                        print(f"DEBUG: actual_length={actual_length}, X_raw var={np.var(X_raw):.2e}, X_filtered var={np.var(X_filtered):.2e}")
                         
                         # 5. Predict Probabilities using trained model (clf)
                         probs = clf.predict_proba(X_filtered)[0] 

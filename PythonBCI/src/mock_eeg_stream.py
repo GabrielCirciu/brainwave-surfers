@@ -45,7 +45,6 @@ def main():
     left_trials, right_trials = load_gold_data(gold_data_path)
 
     # Setting up the UnityMarkers connection to receive triggers
-    # Setting up the UnityMarkers connection to receive triggers
     print("\nLooking for UnityMarkers stream... (Make sure Unity is Playing!)")
     marker_streams = []
     while not marker_streams:

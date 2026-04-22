@@ -12,7 +12,7 @@ def main():
     print("Starting Mock Training Pipeline...")
     
     # Directory containing gold data batches
-    data_dir = os.path.join("PythonBCI", "data", "raw", "gold-data", "subject_1")
+    data_dir = os.path.join("PythonBCI", "data", "raw", "gaci-26-04-22-18-26")
     
     if not os.path.exists(data_dir):
         print(f"Error: Could not find directory {data_dir}")
@@ -68,11 +68,11 @@ def main():
     X = epochs.get_data(copy=True)
     y = labels
 
-    print("Training SVM model with CSP...")
-    # Overfit the training data to guarantee ~100% accuracy for the mock test
+    print("Training LDA model with regularized CSP...")
+    from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
     pipeline = Pipeline([
-        ('CSP', CSP(n_components=4, reg=None, log=True, norm_trace=False)),
-        ('clf', SVC(C=100.0, kernel='rbf', probability=True))
+        ('CSP', CSP(n_components=4, reg='ledoit_wolf', log=True, norm_trace=False)),
+        ('clf', LinearDiscriminantAnalysis(solver='lsqr', shrinkage='auto'))
     ])
     
     # We suppress CSP warnings during fit to keep console clean
