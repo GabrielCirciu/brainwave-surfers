@@ -10,38 +10,65 @@ def main():
     print("Initializing MOABB Motor Imagery paradigm...")
 
     # Schirrmeister2017 (High-Gamma Dataset) contains 128 channels at 500Hz
-    # It includes right_hand, left_hand, rest, and feet. We drop feet.
-    # MOABB MotorImagery paradigm will automatically handle fetching, 
-    # epochs extraction, and filtering the data. We request our 3 specific categories:
+    # It includes right_hand, left_hand, rest, and feet. We drop rest and feet.
+    # We restrict to our specific 8 Unicorn channels (using standard 10-20 names FC3 and FC4 instead of CF3/CF4)
+    # and resample down to 250Hz to match the Unicorn headset.
     dataset = Schirrmeister2017()
-    paradigm = MotorImagery(n_classes=3, events=['left_hand', 'right_hand', 'rest'])
+    paradigm = MotorImagery(
+        n_classes=2, 
+        events=['left_hand', 'right_hand'],
+        channels=['FC3', 'C3', 'CP3', 'Cz', 'CPz', 'FC4', 'C4', 'CP4'],
+        resample=250.0
+    )
     
-    # Fetch data for subject 1
-    # X will be shape (epochs, channels, time)
-    # y will be string labels
-    print(f"Downloading {dataset.code} gold dataset for Subject 1...")
+    base_output_dir = os.path.join("PythonBCI", "data", "raw", "gold-data")
+    os.makedirs(base_output_dir, exist_ok=True)
+
     print("(This might take a minute depending on your internet connection)")
-    X, y, meta = paradigm.get_data(dataset=dataset, subjects=[1])
-    print(f"\nDone!")
-    print(f"Raw epochs shape: {X.shape}")
-    print(f"Labels: {set(y)}")
-    
-    # calibrate.py maps classes to integers (LEFT=0, RIGHT=1, REST=2)
-    # We must format our gold data EXACTLY the same so train.py loads it smoothly.
-    # We use 250Hz as it is the sampling rate of the Unicorn headset
-    # In case we need to, also have convert voltage magnitudes available
-    label_map = {'left_hand': 0, 'right_hand': 1, 'rest': 2}
-    y_mapped = np.array([label_map[label] for label in y])
-    X_microvolts = X * 1
-    fs = 250 
-    
-    output_file = 'PythonBCI/data/raw/gold_data.npz'
-    np.savez(output_file, epochs=X_microvolts, labels=y_mapped, fs=fs)
-    
-    print(f"\nSUCCESS! Wrote to {output_file}")
-    print(f"Total Epochs: {len(y_mapped)}")
-    print(f"Data Range (μV): {X_microvolts.min():.2f} to {X_microvolts.max():.2f}")
-    print(f"Sampling rate: {fs} Hz")
+
+    # For testing, let's only download for the first 2 subjects
+    dataset.subject_list = dataset.subject_list[:2]
+
+    for subject_id in dataset.subject_list:
+        print(f"\nDownloading {dataset.code} gold dataset for Subject {subject_id}...")
+        
+        # X will be shape (epochs, channels, time)
+        # y will be string labels
+        X, y, meta = paradigm.get_data(dataset=dataset, subjects=[subject_id])
+        
+        # calibrate.py outputs (epochs, time, channels). We transpose MOABB data to match.
+        X_transposed = np.transpose(X, (0, 2, 1))
+        
+        # calibrate.py maps classes to integers (LEFT=0, RIGHT=1)
+        label_map = {'left_hand': 0, 'right_hand': 1}
+        y_mapped = np.array([label_map[label] for label in y])
+        X_microvolts = X_transposed * 1
+        
+        # Create dummy AUX data to match the (epochs, time, 10) shape from calibrate.py
+        epochs, time_steps, channels = X_microvolts.shape
+        aux_dummy = np.zeros((epochs, time_steps, 10))
+        
+        subject_dir = os.path.join(base_output_dir, f"subject_{subject_id}")
+        os.makedirs(subject_dir, exist_ok=True)
+        
+        batch_count = 0
+        for i in range(0, epochs, 10):
+            end_idx = i + 10
+            batch_eeg = X_microvolts[i:end_idx]
+            batch_aux = aux_dummy[i:end_idx]
+            batch_labels = y_mapped[i:end_idx]
+            
+            if len(batch_eeg) == 10:
+                output_file = os.path.join(subject_dir, f'batch_{batch_count}.npz')
+                batch_count += 1
+            else:
+                output_file = os.path.join(subject_dir, f'batch_{batch_count}_partial.npz')
+                
+            np.savez(output_file, eeg=batch_eeg, aux=batch_aux, labels=batch_labels)
+            
+        print(f"Subject {subject_id} complete. Saved {epochs} epochs across {(epochs // 10) + (1 if epochs % 10 != 0 else 0)} batches.")
+
+    print(f"\nSUCCESS! All data downloaded and formatted into {base_output_dir}")
 
 if __name__ == '__main__':
     main()

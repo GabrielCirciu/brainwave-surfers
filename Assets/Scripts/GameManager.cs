@@ -10,7 +10,13 @@ public class GameManager : MonoBehaviour
     [SerializeField] private GameObject BCIMotionERP3D;
     [SerializeField] private GameObject LSLReceiver;
     [SerializeField] private GameObject PlayerVehicle;
-    [SerializeField] private GameObject EnemyShip;
+    [SerializeField] private GameObject CalibrationManager;
+    [SerializeField] private GameObject ScoreCanvas;
+    [SerializeField] private GameObject PlayPanel;
+    [SerializeField] private GameObject CalibrationText;
+    [SerializeField] private GameObject CalibrationButton;
+    [SerializeField] private GameObject PlayButton;
+
     private VehicleController vehicleController;
 
     void Awake()
@@ -22,7 +28,6 @@ public class GameManager : MonoBehaviour
     {
         MainMenuCanvas.SetActive(false);
         ObstacleSpawnwer.SetActive(true);
-        EnemyShip.SetActive(true);
         vehicleController.enabled = true;
         ScoreManager.GetComponent<ScoreManager>().StartGame();
     }
@@ -79,11 +84,41 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    public void onEscapePressed()
+    {
+        ObstacleSpawnwer.SetActive(false);
+        GameObject[] obstacles = GameObject.FindGameObjectsWithTag("Obstacle");
+        foreach (GameObject obstacle in obstacles)
+        {
+            Destroy(obstacle);
+        }
+        MainMenuCanvas.SetActive(true);
+        vehicleController.enabled = false;
+        PlayerVehicle.transform.position = new Vector3(0, 0, 0);
+        ScoreManager.GetComponent<ScoreManager>().StartGame();
+        ScoreCanvas.SetActive(false);
+        BCIVisualERP3D.SetActive(false);
+        BCIMotionERP3D.SetActive(false);
+        LSLReceiver.SetActive(false);
+        PlayPanel.SetActive(false);
+        CalibrationButton.SetActive(true);
+        CalibrationText.SetActive(true);
+        PlayButton.SetActive(true);
+    }
+
     void Update()
     {
         if (Input.GetKeyDown(KeyCode.Escape))
         {
-            onEndGame();
+            onEscapePressed();
+        }
+        if (Input.GetKeyDown(KeyCode.C))
+        {
+            CalibrationManager.GetComponent<CalibrationManager>().StartCalibration();
+        }
+        if (Input.GetKeyDown(KeyCode.P))
+        {
+            CalibrationManager.GetComponent<CalibrationManager>().StartGame();
         }
     }
 }

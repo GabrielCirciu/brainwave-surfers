@@ -8,6 +8,15 @@ BUFFER_DUR = 4.0
 
 def main():
     
+    session_input = input("Enter session name: ")
+    # Using hyphens instead of colons for time, as colons are invalid in Windows paths
+    folder_time = datetime.now().strftime("%y-%m-%d-%H-%M")
+    folder_name = f"{session_input}-{folder_time}"
+    output_dir = os.path.join("PythonBCI", "data", "raw", folder_name)
+    os.makedirs(output_dir, exist_ok=True)
+    batch_count = 0
+    print(f"\nData will be saved in batches of 10 to: {output_dir}\n")
+
     # Get unity markers stream
     print("Looking for UnityMarkers stream... (Make sure Unity is Playing!)")
     marker_streams = []
@@ -122,6 +131,12 @@ def main():
                 current_trial_class = 1
                 trial_chunks = []
                 trial_timestamps = []
+                
+            elif cmd == "DISCARD":
+                print("\nTrial discarded due to pause.")
+                is_recording = False
+                trial_chunks = []
+                trial_timestamps = []
             
             elif cmd in ("LEFT_END", "RIGHT_END") and is_recording:
 
@@ -156,8 +171,28 @@ def main():
                     epochs_timestamps.append(trial_ts)
                     labels.append(current_trial_class)
 
-                    print(f"\nEpoch saved! Total epochs: {len(epochs_eeg)}")
+                    print(f"\nEpoch saved! Total epochs in current batch: {len(epochs_eeg)}")
                     print(f"EEG Shape: {eeg_data.shape} | AUX Shape: {aux_data_with_ts.shape} | Label: {current_trial_class}\n")
+                    
+                    if len(epochs_eeg) == 10:
+                        eeg_arr = np.array(epochs_eeg)
+                        aux_arr = np.array(epochs_aux)
+                        labels_arr = np.array(labels)
+                        
+                        output_file = os.path.join(output_dir, f'batch_{batch_count}.npz')
+                        np.savez(output_file, eeg=eeg_arr, aux=aux_arr, labels=labels_arr)
+                        print(f"Saved batch {batch_count} with 10 epochs to {output_file}")
+                        
+                        batch_count += 1
+                        epochs_eeg.clear()
+                        epochs_aux.clear()
+                        epochs_timestamps.clear()
+                        labels.clear()
+
+                        # Call function from train.py which will return a score.
+                        # score = train.main()
+                        # print(f"Score: {score}")
+                        
                 
                 else:
                     print("\nWarning: Received END marker but no EEG data was collected during the trial.")
@@ -171,19 +206,16 @@ def main():
 
         eeg_arr = np.array(epochs_eeg)
         aux_arr = np.array(epochs_aux)
-        ts_arr = np.array(epochs_timestamps)
         labels_arr = np.array(labels)
 
-        # Check todays date and time and set current version to that.
-        current_version = datetime.now().strftime("%Y%m%d_%H%M")
-        output_file = 'PythonBCI/data/raw/output_data_' + current_version + '.npz'
+        output_file = os.path.join(output_dir, f'batch_{batch_count}_partial.npz')
         np.savez(output_file, eeg=eeg_arr, aux=aux_arr, labels=labels_arr)
         
-        print(f"Saved dataset to {output_file}")
+        print(f"Saved final partial batch ({len(epochs_eeg)} epochs) to {output_file}")
         print(f"Shapes - EEG: {eeg_arr.shape}, AUX: {aux_arr.shape}, Labels: {labels_arr.shape}")
         
     else:
-        print("No epochs were recorded.")
+        print("No remaining epochs to save.")
 
 if __name__ == '__main__':
     main()

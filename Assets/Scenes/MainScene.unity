@@ -341,7 +341,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Data
+  m_text: Calibrate
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -1794,7 +1794,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 50}
-  m_SizeDelta: {x: 200, y: 50}
+  m_SizeDelta: {x: 600, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1012875185
 MonoBehaviour:
@@ -1843,8 +1843,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 36
-  m_fontSizeBase: 36
+  m_fontSize: 24
+  m_fontSizeBase: 24
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -2080,7 +2080,12 @@ MonoBehaviour:
   BCIMotionERP3D: {fileID: 880028468}
   LSLReceiver: {fileID: 1599902540}
   PlayerVehicle: {fileID: 658979912}
-  EnemyShip: {fileID: 1462544918}
+  CalibrationManager: {fileID: 1222418017}
+  ScoreCanvas: {fileID: 1759466425}
+  PlayPanel: {fileID: 1174671259}
+  CalibrationText: {fileID: 1012875183}
+  CalibrationButton: {fileID: 1458079581}
+  PlayButton: {fileID: 1991055948}
 --- !u!1 &1068535426
 GameObject:
   m_ObjectHideFlags: 0
@@ -3216,11 +3221,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1458079581}
   m_CullTransparentMesh: 1
---- !u!1 &1462544918 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 972b649e2adefdf4da4280c11475e52e, type: 3}
-  m_PrefabInstance: {fileID: 1243252126}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1599902540
 GameObject:
   m_ObjectHideFlags: 0
