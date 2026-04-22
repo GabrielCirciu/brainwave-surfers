@@ -17,6 +17,8 @@ PythonBCI/data/raw/gold_data.npz
 /BuiltGame/*
 PythonBCI/data/raw/gold-data/*
 /PythonBCI/data/raw/gold-data/*
+PythonBCI/src/__pycache__*
+/PythonBCI/src/__pycache__*
 
 # By default unity supports Blender asset imports, *.blend1 blender files do not need to be commited to version control.
 *.blend1
