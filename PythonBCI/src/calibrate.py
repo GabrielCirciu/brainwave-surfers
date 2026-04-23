@@ -5,6 +5,7 @@ from datetime import datetime
 import os
 import pickle
 import glob
+import csv
 from train import train_model
 BUFFER_DUR = 4.0
 
@@ -16,6 +17,8 @@ def main():
     folder_name = f"{session_input}-{folder_time}"
     output_dir = os.path.join("PythonBCI", "data", "raw", folder_name)
     os.makedirs(output_dir, exist_ok=True)
+    model_save_dir = os.path.join("PythonBCI", "models", folder_name)
+    os.makedirs(model_save_dir, exist_ok=True)
     batch_count = 0
     print(f"\nData will be saved in batches of 10 to: {output_dir}\n")
 
@@ -97,6 +100,7 @@ def main():
     is_recording = False
     trial_chunks = []
     trial_timestamps = []
+    metrics_log = []
 
     print("\nStarting calibration...")
 
@@ -191,9 +195,6 @@ def main():
                         epochs_timestamps.clear()
                         labels.clear()
 
-                        model_save_dir = os.path.join("PythonBCI", "models", folder_name)
-                        os.makedirs(model_save_dir, exist_ok=True)
-                        
                         pipelines_to_try = ["cov_ts_lr", "csp_svm", "csp_lda", "csp_rf"]
                         best_overall_model = None
                         best_overall_score = -1
@@ -212,6 +213,13 @@ def main():
                                 if np.isnan(score):
                                     score = report.get("auc", 0)
                                     
+                                metrics_log.append({
+                                    "Batch": batch_count - 1,
+                                    "Pipeline": pipe_name,
+                                    "Accuracy": score,
+                                    "AUC": report.get("auc", 0)
+                                })
+                                
                                 print(f"  - {pipe_name}: {score:.4f}")
                                 
                                 if score > best_overall_score:
@@ -274,9 +282,6 @@ def main():
         np.savez(merged_path, eeg=eeg, aux=aux, labels=labels)
         print(f"Merged data saved to {merged_path}. Total shape: {eeg.shape}")
         
-        model_save_dir = os.path.join("PythonBCI", "models", folder_name)
-        os.makedirs(model_save_dir, exist_ok=True)
-        
         pipelines_to_try = ["cov_ts_lr", "csp_svm", "csp_lda", "csp_rf"]
         best_overall_model = None
         best_overall_score = -1
@@ -294,6 +299,13 @@ def main():
                 score = report.get("accuracy", 0)
                 if np.isnan(score):
                     score = report.get("auc", 0)
+                    
+                metrics_log.append({
+                    "Batch": "Final",
+                    "Pipeline": pipe_name,
+                    "Accuracy": score,
+                    "AUC": report.get("auc", 0)
+                })
                     
                 print(f"  - {pipe_name}: {score:.4f}")
                 
@@ -317,6 +329,14 @@ def main():
             print(f"Copied to {root_model_path} for immediate use in real-time inference.")
     else:
         print("No batch files found to merge.")
+
+    if metrics_log:
+        csv_path = os.path.join(model_save_dir, "metrics.csv")
+        with open(csv_path, 'w', newline='') as f:
+            writer = csv.DictWriter(f, fieldnames=["Batch", "Pipeline", "Accuracy", "AUC"])
+            writer.writeheader()
+            writer.writerows(metrics_log)
+        print(f"\nMetrics log saved to: {csv_path}")
 
 if __name__ == '__main__':
     main()
