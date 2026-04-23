@@ -207,7 +207,7 @@ def main():
                                     data_path=output_file, 
                                     pipeline_name=pipe_name,
                                     save_dir=model_save_dir,
-                                    use_grid=False
+                                    use_grid=True
                                 )
                                 score = report.get("accuracy", 0)
                                 if np.isnan(score):
