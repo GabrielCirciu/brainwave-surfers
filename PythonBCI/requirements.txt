@@ -4,7 +4,4 @@ pylsl
 numpy
 scipy
 moabb
-os
-sys
-pickle
 pydirectinput
