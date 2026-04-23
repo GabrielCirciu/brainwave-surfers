@@ -3,7 +3,9 @@ from pylsl import StreamInlet, resolve_byprop, resolve_streams
 import time
 from datetime import datetime
 import os
-
+import pickle
+import glob
+from train import train_model
 BUFFER_DUR = 4.0
 
 def main():
@@ -189,9 +191,41 @@ def main():
                         epochs_timestamps.clear()
                         labels.clear()
 
-                        # Call function from train.py which will return a score.
-                        # score = train.main()
-                        # print(f"Score: {score}")
+                        model_save_dir = os.path.join("PythonBCI", "models", folder_name)
+                        os.makedirs(model_save_dir, exist_ok=True)
+                        
+                        pipelines_to_try = ["cov_ts_lr", "csp_svm", "csp_lda", "csp_rf"]
+                        best_overall_model = None
+                        best_overall_score = -1
+                        best_pipeline_name = ""
+                        
+                        print("\nEvaluating pipelines on current batch...")
+                        for pipe_name in pipelines_to_try:
+                            try:
+                                model, report = train_model(
+                                    data_path=output_file, 
+                                    pipeline_name=pipe_name,
+                                    save_dir=model_save_dir,
+                                    use_grid=False
+                                )
+                                score = report.get("accuracy", 0)
+                                if np.isnan(score):
+                                    score = report.get("auc", 0)
+                                    
+                                print(f"  - {pipe_name}: {score:.4f}")
+                                
+                                if score > best_overall_score:
+                                    best_overall_score = score
+                                    best_overall_model = model
+                                    best_pipeline_name = pipe_name
+                            except Exception as e:
+                                print(f"  - {pipe_name} failed: {e}")
+                                
+                        if best_overall_model is not None:
+                            best_model_path = os.path.join(model_save_dir, f"batch_{batch_count - 1}_model.pkl")
+                            with open(best_model_path, 'wb') as f:
+                                pickle.dump(best_overall_model, f)
+                            print(f"Best pipeline ({best_pipeline_name}) saved to: {best_model_path}\n")
                         
                 
                 else:
@@ -216,6 +250,73 @@ def main():
         
     else:
         print("No remaining epochs to save.")
+
+    # === Final Full Model Training ===
+    print("\nMerging all batches for final model training...")
+    batch_files = glob.glob(os.path.join(output_dir, "batch_*.npz"))
+    
+    if batch_files:
+        all_eeg = []
+        all_aux = []
+        all_labels = []
+        
+        for f in batch_files:
+            data = np.load(f)
+            all_eeg.append(data['eeg'])
+            all_aux.append(data['aux'])
+            all_labels.append(data['labels'])
+            
+        eeg = np.concatenate(all_eeg, axis=0)
+        aux = np.concatenate(all_aux, axis=0)
+        labels = np.concatenate(all_labels, axis=0)
+        
+        merged_path = os.path.join(output_dir, "merged.npz")
+        np.savez(merged_path, eeg=eeg, aux=aux, labels=labels)
+        print(f"Merged data saved to {merged_path}. Total shape: {eeg.shape}")
+        
+        model_save_dir = os.path.join("PythonBCI", "models", folder_name)
+        os.makedirs(model_save_dir, exist_ok=True)
+        
+        pipelines_to_try = ["cov_ts_lr", "csp_svm", "csp_lda", "csp_rf"]
+        best_overall_model = None
+        best_overall_score = -1
+        best_pipeline_name = ""
+        
+        print("\nEvaluating pipelines on FULL merged dataset...")
+        for pipe_name in pipelines_to_try:
+            try:
+                model, report = train_model(
+                    data_path=merged_path, 
+                    pipeline_name=pipe_name,
+                    save_dir=model_save_dir,
+                    use_grid=False
+                )
+                score = report.get("accuracy", 0)
+                if np.isnan(score):
+                    score = report.get("auc", 0)
+                    
+                print(f"  - {pipe_name}: {score:.4f}")
+                
+                if score > best_overall_score:
+                    best_overall_score = score
+                    best_overall_model = model
+                    best_pipeline_name = pipe_name
+            except Exception as e:
+                print(f"  - {pipe_name} failed: {e}")
+                
+        if best_overall_model is not None:
+            final_model_path = os.path.join(model_save_dir, "model.pkl")
+            with open(final_model_path, 'wb') as f:
+                pickle.dump(best_overall_model, f)
+            print(f"\nSUCCESS! Best overall pipeline ({best_pipeline_name}) saved to: {final_model_path}")
+            
+            # Also save to the root models directory so realtime_predict.py finds it immediately
+            root_model_path = os.path.join("PythonBCI", "models", "model.pkl")
+            with open(root_model_path, 'wb') as f:
+                pickle.dump(best_overall_model, f)
+            print(f"Copied to {root_model_path} for immediate use in real-time inference.")
+    else:
+        print("No batch files found to merge.")
 
 if __name__ == '__main__':
     main()
