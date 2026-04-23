@@ -21,13 +21,13 @@ def main():
         for i, s in enumerate(streams):
             print(f"Stream {i}: {s.name()} | Type: {s.type()} | Channels: {s.channel_count()}")
         
-        print("\nFiltering for Data streams...")
-        eeg_streams = [s for s in streams if s.type() == 'Data']
+        print("\nFiltering for EEG streams...")
+        eeg_streams = [s for s in streams if s.type() == 'EEG']
         for s in eeg_streams:
-            print(f"Found Data stream '{s.name()}'...")
+            print(f"Found EEG stream '{s.name()}'...")
         
         if len(eeg_streams) == 0:
-            print("Still waiting for the Data stream... (Make sure LSL is set to 'send all signals in one stream')")
+            print("Still waiting for the EEG stream... (Make sure LSL is set to 'send all signals in one stream')")
             time.sleep(1)
     
     print("\nPress any key to continue...")

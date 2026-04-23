@@ -1,0 +1,11 @@
+{
+  "model_name": "csp_svm_20260423_134904",
+  "pipeline": "csp_svm",
+  "use_grid": false,
+  "data_path": "PythonBCI\\data\\raw\\hiamp-26-04-23-13-46\\batch_0.npz",
+  "fs": 250.0,
+  "auc": 0.4,
+  "accuracy": 0.5,
+  "best_params": {},
+  "model_path": "PythonBCI\\models\\hiamp-26-04-23-13-46\\csp_svm_20260423_134904.pkl"
+}

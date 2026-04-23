@@ -42,7 +42,7 @@ def main():
             print(f"Stream {i}: {s.name()} | Type: {s.type()} | Channels: {s.channel_count()}")
         
         print("\nFiltering for Data streams...")
-        eeg_streams = [s for s in streams if s.type() == 'Data']
+        eeg_streams = [s for s in streams if s.type() == 'EEG']
         for s in eeg_streams:
             print(f"Found Data stream '{s.name()}'...")
         
