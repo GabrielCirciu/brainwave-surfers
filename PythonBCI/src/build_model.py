@@ -12,6 +12,7 @@ def main():
     parser.add_argument("--use_grid", action="store_true", help="Use GridSearchCV for hyperparameters")
     parser.add_argument("--use_aux", action="store_true", help="Use auxiliary channels along with EEG")
     parser.add_argument("--save_dir", default=os.path.join("PythonBCI", "models"), help="Directory to save the models")
+    parser.add_argument("--eeg_device", default="Unicorn", help="Device used for EEG: Unicorn, hiAmp")
     args = parser.parse_args()
 
     # 1. Merge the batch files
@@ -58,7 +59,8 @@ def main():
                 pipeline_name=pipe_name,
                 save_dir=save_dir,
                 use_grid=args.use_grid,
-                use_aux=args.use_aux
+                use_aux=args.use_aux,
+                eeg_device=args.eeg_device
             )
             score = report.get("accuracy", 0)
             if np.isnan(score):

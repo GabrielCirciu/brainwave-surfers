@@ -19,7 +19,7 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import ShuffleSplit, GridSearchCV, cross_validate
 
 
-def load_and_preprocess(data_path, use_aux=False):
+def load_and_preprocess(data_path, use_aux=False, resample_fs=False, eeg_device="Unicorn"):
     data = np.load(data_path)
     # not sure what config we use, for some data - epochs, for some - eeg, so this oone works for both
     if "epochs" in data:
@@ -57,15 +57,17 @@ def load_and_preprocess(data_path, use_aux=False):
     else:
         raise KeyError("NPZ file must contain either 'epochs' or 'eeg' arrays")
 
-    labels = data["labels"]
-    # sampling frequency may be absent in some exported NPZ files (gold-data)
-    if "fs" in data:
-        fs = float(data["fs"])
-    elif "sfreq" in data:
-        fs = float(data["sfreq"])
+    if eeg_device == "hiAmp":
+        # Leave only channel 19, 28, 37, 30, 39, 23, 32, 41
+        epochs_data = epochs_data[:, [18, 27, 36, 29, 38, 22, 31, 40], :]
+        print(f"hiAmp device detected.Selected channels: {[18, 27, 36, 29, 38, 22, 31, 40]}")
     else:
-        fs = 250.0
-        print(f"Warning: 'fs' not found in NPZ; defaulting to {fs} Hz")
+        print("Unicorn device detected.Using all channels.")
+        
+    labels = data["labels"]
+    # gather how many rows in a sample, divide it by 4 and that is the fs
+    fs = epochs_data.shape[2] / 4
+    print(f"Sample frequency: {fs} Hz")
 
     print(f"Loaded data shape: {epochs_data.shape} (Trials, Channels, Samples)")
 
@@ -91,7 +93,7 @@ def load_and_preprocess(data_path, use_aux=False):
 
     epochs = mne.EpochsArray(epochs_data * 1e-6, info, verbose=False)
     
-    if fs != 250.0:
+    if resample_fs:
         print(f"Resampling from {fs} Hz to 250.0 Hz...")
         epochs = epochs.resample(250.0, verbose=False)
         fs = 250.0
@@ -107,6 +109,7 @@ def load_and_preprocess(data_path, use_aux=False):
 
 
 def get_pipeline_and_grid(name):
+    # Covariance, Tangent Space, Logistic Regression
     if name == "cov_ts_lr":
         pipeline = Pipeline([
             ("cov", Covariances(estimator="oas")),
@@ -119,6 +122,7 @@ def get_pipeline_and_grid(name):
             "clf__C": [0.1, 1.0, 10.0],
         }
 
+    # Common Spatial Patterns, Support Vector Machine
     elif name == "csp_svm":
         pipeline = Pipeline([
             ("csp", CSP(log=True, norm_trace=False)),
@@ -131,6 +135,7 @@ def get_pipeline_and_grid(name):
             "clf__C": [0.1, 1.0, 10.0],
         }
 
+    # Common Spatial Patterns, Linear Discriminant Analysis
     elif name == "csp_lda":
         pipeline = Pipeline([
             ("csp", CSP(log=True, norm_trace=False)),
@@ -143,6 +148,7 @@ def get_pipeline_and_grid(name):
             "clf__shrinkage": ["auto"],
         }
 
+    # Common Spatial Patterns, Random Forest
     elif name == "csp_rf":
         pipeline = Pipeline([
             ("csp", CSP(log=True, norm_trace=False)),
@@ -155,6 +161,7 @@ def get_pipeline_and_grid(name):
             "clf__max_depth": [None, 3],
         }
 
+    # Common Spatial Patterns, Multi-Layer Perceptron
     elif name == "csp_mlp":
         pipeline = Pipeline([
             ("csp", CSP(log=True, norm_trace=False)),
@@ -167,6 +174,7 @@ def get_pipeline_and_grid(name):
             "clf__activation": ["relu", "tanh"]
         }
 
+    # Covariance, Tangent Space, Multi-Layer Perceptron
     elif name == "cov_ts_mlp":
         pipeline = Pipeline([
             ("cov", Covariances(estimator="oas")),
@@ -187,8 +195,8 @@ def get_pipeline_and_grid(name):
     return pipeline, param_grid
 
 
-def train_model(data_path, pipeline_name="cov_ts_lr", save_dir="../models", use_grid=False, use_aux=False):
-    X, y, fs = load_and_preprocess(data_path, use_aux)
+def train_model(data_path, pipeline_name="cov_ts_lr", save_dir="../models", use_grid=False, use_aux=False, resample_fs=False, eeg_device=""):
+    X, y, fs = load_and_preprocess(data_path, use_aux=use_aux, resample_fs=resample_fs, eeg_device=eeg_device)
     pipeline, param_grid = get_pipeline_and_grid(pipeline_name)
 
     # Handle tiny datasets: cross-validation can fail when train folds contain
@@ -316,6 +324,8 @@ def main():
     parser.add_argument("--save_dir")
     parser.add_argument("--use_grid", action="store_true")
     parser.add_argument("--use_aux", action="store_true")
+    parser.add_argument("--resample_fs", default=False)
+    parser.add_argument("--eeg_device", default="Unicorn")
     args = parser.parse_args()
 
     train_model(
@@ -324,6 +334,8 @@ def main():
         save_dir=args.save_dir or "../models",
         use_grid=args.use_grid,
         use_aux=args.use_aux,
+        resample_fs=args.resample_fs,
+        eeg_device=args.eeg_device,
     )
 
 
