@@ -61,7 +61,22 @@ public class CalibrationManager : MonoBehaviour
             "The smell of freshly cut grass is actually a distress signal released by the plants.",
             "The human nose can detect over 1 trillion different scents.",
             "Bananas are berries, but strawberries are not.",
-            "The Great Barrier Reef is the largest living structure on Earth, visible from space."
+            "The Great Barrier Reef is the largest living structure on Earth, visible from space.",
+            "Your brain generates enough electricity to power a small light bulb (about 12-25 watts).",
+            "A day on Venus is longer than a year on Venus. It takes 243 Earth days to rotate on its axis but only 225 Earth days to orbit the Sun.",
+            "Wombat poop is cube-shaped, which stops it from rolling away on steep inclines.",
+            "There are more trees on Earth than stars in the Milky Way galaxy.",
+            "Water can boil and freeze at the same time. This is called the 'triple point'.",
+            "Sloths can hold their breath for up to 40 minutes, which is longer than dolphins.",
+            "A jiffy is an actual unit of time. In physics, it's the time it takes for light to travel one centimeter in a vacuum.",
+            "Cows have best friends and get stressed when they are separated.",
+            "Neutron stars can spin at a rate of 600 rotations per second.",
+            "The human brain is about 75% water, and even mild dehydration can affect cognitive function.",
+            "There is a planet made of diamonds. It's called 55 Cancri e, and it's twice the size of Earth.",
+            "Pineapples take about two years to grow and can be grown from their own leafy tops.",
+            "Butterflies taste with their feet.",
+            "The inventor of the Pringles can is buried in one. Fredric Baur requested his ashes be buried in a Pringles can.",
+            "Space is completely silent. There is no atmosphere in space, which means that sound has no medium or way to travel to be heard."
         };
         return funFacts[Random.Range(0, funFacts.Length)];
     }
@@ -132,19 +147,27 @@ public class CalibrationManager : MonoBehaviour
 
         int totalTrials = trialsPerClass * 2;
         int[] trialQueue = new int[totalTrials];
-        for (int i = 0; i < trialsPerClass; i++)
+        
+        // Ensure 5 left and 5 right splits for every 10 trials
+        int blocks = totalTrials / 10;
+        for (int b = 0; b < blocks; b++)
         {
-            trialQueue[i] = 0; // Left
-            trialQueue[i + trialsPerClass] = 1; // Right
-        }
-
-        // Shuffle trial order
-        for (int i = 0; i < totalTrials; i++)
-        {
-            int temp = trialQueue[i];
-            int r = Random.Range(i, totalTrials);
-            trialQueue[i] = trialQueue[r];
-            trialQueue[r] = temp;
+            int blockStart = b * 10;
+            // 5 left (0), 5 right (1)
+            for (int i = 0; i < 5; i++)
+            {
+                trialQueue[blockStart + i] = 0;
+                trialQueue[blockStart + i + 5] = 1;
+            }
+            
+            // Shuffle just this block
+            for (int i = 0; i < 10; i++)
+            {
+                int temp = trialQueue[blockStart + i];
+                int r = Random.Range(i, 10);
+                trialQueue[blockStart + i] = trialQueue[blockStart + r];
+                trialQueue[blockStart + r] = temp;
+            }
         }
 
         for (int i = 0; i < totalTrials; i++)
