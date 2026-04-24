@@ -1,6 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import argparse
+import os
 
 def plot_metrics(csv_path):
     # Read the CSV file
@@ -37,5 +38,6 @@ def plot_metrics(csv_path):
     plt.show()
 
 if __name__ == "__main__":
-    csv_file = "/Users/gabrielcirciu/Documents/ITU University Files/Semester 6/Project/Game/brainwave-surfers/PythonBCI/models/myta-26-04-23-10-47/metrics.csv"
+    csv_file = os.path.join("PythonBCI", "models", "myta-hiamp-26-04-24-11-57", "metrics.csv")
+    # csv_file = "/Users/gabrielcirciu/Documents/ITU University Files/Semester 6/Project/Game/brainwave-surfers/PythonBCI/models/myta-hiamp-26-04-24-11-57/metrics.csv"
     plot_metrics(csv_file)

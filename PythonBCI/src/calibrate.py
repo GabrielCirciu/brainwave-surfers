@@ -163,19 +163,21 @@ def main():
                         pad_width = BUFFER_SAMPLES - actual_length
                         trial_data = np.pad(trial_data, ((0, pad_width), (0, 0)), mode='edge')
                         trial_ts = np.pad(trial_ts, (0, pad_width), mode='edge')
-                
+
+                    # Append timestamp to the last column of aux_data (making it 10 columns)
+                    ts_col = trial_ts.reshape(-1, 1)
+
                     # Split the channels: 0-7 are EEG, 8-16 are AUX (accelerometer, gyro, battery, etc.)
                     # If the stream is more than our regular 17 channels, it's hiAmp so all EEG
                     if stream_channels < 20:
                         eeg_data = trial_data[:, :8]
                         aux_data = trial_data[:, 8:17]
+                        aux_data_with_ts = np.hstack((aux_data, ts_col))
                     else:
                         eeg_data = trial_data
                         aux_data = []
+                        aux_data_with_ts = ts_col
                     
-                    # Append timestamp to the last column of aux_data (making it 10 columns)
-                    ts_col = trial_ts.reshape(-1, 1)
-                    aux_data_with_ts = np.hstack((aux_data, ts_col))
                     
                     epochs_eeg.append(eeg_data)
                     epochs_aux.append(aux_data_with_ts)

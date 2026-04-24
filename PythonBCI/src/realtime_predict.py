@@ -8,7 +8,7 @@ import pydirectinput
 import os
 
 def main():
-    model_path = os.path.join("PythonBCI", "models", "test-26-04-23-10-47", "model.pkl")
+    model_path = os.path.join("PythonBCI", "models", "myta-26-04-24-11-19", "model.pkl")
     try:
         with open(model_path, 'rb') as f:
             clf = pickle.load(f)
