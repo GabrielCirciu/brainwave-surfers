@@ -10,6 +10,7 @@ def main():
     parser.add_argument("--data_dir", required=True, help="Directory containing batch_*.npz files (e.g., PythonBCI/data/raw/gaci-...)")
     parser.add_argument("--pipeline", default="all", help="Pipeline name: all, cov_ts_lr, csp_svm, csp_lda, csp_rf")
     parser.add_argument("--use_grid", action="store_true", help="Use GridSearchCV for hyperparameters")
+    parser.add_argument("--use_aux", action="store_true", help="Use auxiliary channels along with EEG")
     parser.add_argument("--save_dir", default=os.path.join("PythonBCI", "models"), help="Directory to save the models")
     args = parser.parse_args()
 
@@ -43,7 +44,7 @@ def main():
     # 2. Call train.py's internal function
     save_dir = args.save_dir
     
-    pipelines_to_try = ["cov_ts_lr", "csp_svm", "csp_lda", "csp_rf"] if args.pipeline == "all" else [args.pipeline]
+    pipelines_to_try = ["cov_ts_lr", "csp_svm", "csp_lda", "csp_rf", "cov_ts_mlp", "csp_mlp"] if args.pipeline == "all" else [args.pipeline]
     
     best_overall_model = None
     best_overall_score = -1
@@ -56,7 +57,8 @@ def main():
                 data_path=merged_path, 
                 pipeline_name=pipe_name,
                 save_dir=save_dir,
-                use_grid=args.use_grid
+                use_grid=args.use_grid,
+                use_aux=args.use_aux
             )
             score = report.get("accuracy", 0)
             if np.isnan(score):

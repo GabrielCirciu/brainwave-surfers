@@ -165,8 +165,13 @@ def main():
                         trial_ts = np.pad(trial_ts, (0, pad_width), mode='edge')
                 
                     # Split the channels: 0-7 are EEG, 8-16 are AUX (accelerometer, gyro, battery, etc.)
-                    eeg_data = trial_data[:, :8]
-                    aux_data = trial_data[:, 8:17]
+                    # If the stream is more than our regular 17 channels, it's hiAmp so all EEG
+                    if stream_channels < 20:
+                        eeg_data = trial_data[:, :8]
+                        aux_data = trial_data[:, 8:17]
+                    else:
+                        eeg_data = trial_data
+                        aux_data = []
                     
                     # Append timestamp to the last column of aux_data (making it 10 columns)
                     ts_col = trial_ts.reshape(-1, 1)
@@ -195,7 +200,13 @@ def main():
                         epochs_timestamps.clear()
                         labels.clear()
 
-                        pipelines_to_try = ["cov_ts_lr", "csp_svm", "csp_lda", "csp_rf"]
+                        pipelines_to_try = ["cov_ts_lr", "csp_svm", "csp_lda", "csp_rf", "cov_ts_mlp", "csp_mlp"]
+                        if stream_channels >= 20:
+                            use_grid = False
+                        else:
+                            use_grid = True
+                        use_aux = True
+                        
                         best_overall_model = None
                         best_overall_score = -1
                         best_pipeline_name = ""
@@ -207,7 +218,8 @@ def main():
                                     data_path=output_file, 
                                     pipeline_name=pipe_name,
                                     save_dir=model_save_dir,
-                                    use_grid=True
+                                    use_grid=use_grid,
+                                    use_aux=use_aux
                                 )
                                 score = report.get("accuracy", 0)
                                 if np.isnan(score):
@@ -282,7 +294,13 @@ def main():
         np.savez(merged_path, eeg=eeg, aux=aux, labels=labels)
         print(f"Merged data saved to {merged_path}. Total shape: {eeg.shape}")
         
-        pipelines_to_try = ["cov_ts_lr", "csp_svm", "csp_lda", "csp_rf"]
+        pipelines_to_try = ["cov_ts_lr", "csp_svm", "csp_lda", "csp_rf", "cov_ts_mlp", "csp_mlp"]
+        if stream_channels >= 20:
+            use_grid = False
+        else:
+            use_grid = True
+        use_aux = True
+
         best_overall_model = None
         best_overall_score = -1
         best_pipeline_name = ""
@@ -294,7 +312,8 @@ def main():
                     data_path=merged_path, 
                     pipeline_name=pipe_name,
                     save_dir=model_save_dir,
-                    use_grid=False
+                    use_grid=use_grid,
+                    use_aux=use_aux
                 )
                 score = report.get("accuracy", 0)
                 if np.isnan(score):

@@ -15,16 +15,30 @@ from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.linear_model import LogisticRegression
+from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import ShuffleSplit, GridSearchCV, cross_validate
 
 
-def load_and_preprocess(data_path):
+def load_and_preprocess(data_path, use_aux=False):
     data = np.load(data_path)
     # not sure what config we use, for some data - epochs, for some - eeg, so this oone works for both
     if "epochs" in data:
         epochs_data = data["epochs"]
     elif "eeg" in data:
         eeg = data["eeg"]
+        if use_aux and "aux" in data:
+            aux = data["aux"]
+            if eeg.ndim == 3:
+                if eeg.shape[1] > eeg.shape[2]:
+                    eeg = np.concatenate([eeg, aux], axis=2)
+                else:
+                    eeg = np.concatenate([eeg, aux], axis=1)
+            elif eeg.ndim == 2:
+                if eeg.shape[0] > eeg.shape[1]:
+                    eeg = np.concatenate([eeg, aux], axis=1)
+                else:
+                    eeg = np.concatenate([eeg, aux], axis=0)
+
         # Normalize to (trials, channels, samples)
         if eeg.ndim == 3:
             # common layouts: (trials, samples, channels) or (trials, channels, samples)
@@ -56,8 +70,24 @@ def load_and_preprocess(data_path):
     print(f"Loaded data shape: {epochs_data.shape} (Trials, Channels, Samples)")
 
     n_channels = epochs_data.shape[1]
+    
     ch_names = [f"EEG {i+1}" for i in range(n_channels)]
-    info = mne.create_info(ch_names=ch_names, sfreq=fs, ch_types=["eeg"] * n_channels)
+    ch_types = ["eeg"] * n_channels
+    
+    if "eeg" in data and use_aux and "aux" in data:
+        orig_eeg = data["eeg"]
+        if orig_eeg.ndim == 3:
+            n_orig_eeg = orig_eeg.shape[2] if orig_eeg.shape[1] > orig_eeg.shape[2] else orig_eeg.shape[1]
+        elif orig_eeg.ndim == 2:
+            n_orig_eeg = orig_eeg.shape[1] if orig_eeg.shape[0] > orig_eeg.shape[1] else orig_eeg.shape[0]
+        else:
+            n_orig_eeg = n_channels
+            
+        for i in range(n_orig_eeg, n_channels):
+            ch_names[i] = f"AUX {i - n_orig_eeg + 1}"
+            ch_types[i] = "eeg" # Filter aux same as eeg
+
+    info = mne.create_info(ch_names=ch_names, sfreq=fs, ch_types=ch_types)
 
     epochs = mne.EpochsArray(epochs_data * 1e-6, info, verbose=False)
     
@@ -125,14 +155,40 @@ def get_pipeline_and_grid(name):
             "clf__max_depth": [None, 3],
         }
 
+    elif name == "csp_mlp":
+        pipeline = Pipeline([
+            ("csp", CSP(log=True, norm_trace=False)),
+            ("clf", MLPClassifier(max_iter=1000, random_state=42)),
+        ])
+        param_grid = {
+            "csp__n_components": [2, 4],
+            "clf__hidden_layer_sizes": [(50,), (100,), (50, 50)],
+            "clf__alpha": [0.0001, 0.001],
+            "clf__activation": ["relu", "tanh"]
+        }
+
+    elif name == "cov_ts_mlp":
+        pipeline = Pipeline([
+            ("cov", Covariances(estimator="oas")),
+            ("ts", TangentSpace(metric="riemann")),
+            ("clf", MLPClassifier(max_iter=1000, random_state=42)),
+        ])
+        param_grid = {
+            "cov__estimator": ["oas"],
+            "ts__metric": ["riemann"],
+            "clf__hidden_layer_sizes": [(50,), (100,), (50, 50)],
+            "clf__alpha": [0.0001, 0.001],
+            "clf__activation": ["relu", "tanh"]
+        }
+
     else:
-        raise ValueError("pipeline must be one of: cov_ts_lr, csp_svm, csp_lda, csp_rf")
+        raise ValueError("pipeline must be one of: cov_ts_lr, csp_svm, csp_lda, csp_rf, csp_mlp, cov_ts_mlp")
 
     return pipeline, param_grid
 
 
-def train_model(data_path, pipeline_name="cov_ts_lr", save_dir="../models", use_grid=False):
-    X, y, fs = load_and_preprocess(data_path)
+def train_model(data_path, pipeline_name="cov_ts_lr", save_dir="../models", use_grid=False, use_aux=False):
+    X, y, fs = load_and_preprocess(data_path, use_aux)
     pipeline, param_grid = get_pipeline_and_grid(pipeline_name)
 
     # Handle tiny datasets: cross-validation can fail when train folds contain
@@ -259,6 +315,7 @@ def main():
     parser.add_argument("--pipeline")
     parser.add_argument("--save_dir")
     parser.add_argument("--use_grid", action="store_true")
+    parser.add_argument("--use_aux", action="store_true")
     args = parser.parse_args()
 
     train_model(
@@ -266,6 +323,7 @@ def main():
         pipeline_name=args.pipeline or "cov_ts_lr",
         save_dir=args.save_dir or "../models",
         use_grid=args.use_grid,
+        use_aux=args.use_aux,
     )
 
 

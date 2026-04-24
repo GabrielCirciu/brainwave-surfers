@@ -5,7 +5,7 @@ from numpy import load
 
 np.set_printoptions(threshold=sys.maxsize)
 
-the_file =  os.path.join("PythonBCI", "data", "raw", "gold-data", "subject_1", "batch_0.npz")
+the_file =  os.path.join("PythonBCI", "data", "raw", "hiamp-26-04-23-13-46", "batch_0.npz")
 
 data = load(the_file)
 lst = data.files
