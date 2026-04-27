@@ -1,0 +1,4 @@
+Batch,Pipeline,Accuracy,AUC,Status,Best Params
+Final,aug_ts_lr,0.9097398669086509,0.9705877356888057,Merged (29 batches),{}
+Final,aug_ts_svm,0.8958257713248639,0.9752080856123662,Merged (29 batches),{}
+Final,aug_ts_mlp,0.8992740471869329,0.9659419058943435,Merged (29 batches),{}

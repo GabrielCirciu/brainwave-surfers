@@ -1,67 +1,45 @@
-Batch,Pipeline,Accuracy,AUC
-0,cov_ts_lr,0.85,0.8
-0,csp_svm,0.75,0.7
-0,csp_lda,0.6,0.5
-0,csp_rf,0.6,0.85
-0,cov_ts_mlp,0.65,0.5
-0,csp_mlp,0.45,0.5
-1,cov_ts_lr,0.9,0.9
-1,csp_svm,0.85,0.9
-1,csp_lda,0.85,0.9
-1,csp_rf,0.85,0.95
-1,cov_ts_mlp,0.85,0.9
-1,csp_mlp,0.8,0.9
-2,cov_ts_lr,0.7,0.7
-2,csp_svm,0.75,0.7
-2,csp_lda,0.8,0.9
-2,csp_rf,0.6,0.7
-2,cov_ts_mlp,0.65,0.5
-2,csp_mlp,0.65,0.9
-3,cov_ts_lr,0.45,0.4
-3,csp_svm,0.65,0.8
-3,csp_lda,0.8,0.8
-3,csp_rf,0.6,0.8
-3,cov_ts_mlp,0.35,0.4
-3,csp_mlp,0.65,0.8
-4,cov_ts_lr,0.25,0.2
-4,csp_svm,0.4,0.3
-4,csp_lda,0.4,0.3
-4,csp_rf,0.4,0.4
-4,cov_ts_mlp,0.35,0.5
-4,csp_mlp,0.4,0.2
-5,cov_ts_lr,0.4,0.2
-5,csp_svm,0.7,0.8
-5,csp_lda,0.75,0.7
-5,csp_rf,0.8,0.9
-5,cov_ts_mlp,0.3,0.4
-5,csp_mlp,0.65,0.7
-6,cov_ts_lr,0.75,0.8
-6,csp_svm,0.55,0.5
-6,csp_lda,0.45,0.4
-6,csp_rf,0.5,0.3
-6,cov_ts_mlp,0.85,1.0
-6,csp_mlp,0.75,0.5
-7,cov_ts_lr,0.3,0.0
-7,csp_svm,0.35,0.3
-7,csp_lda,0.3,0.4
-7,csp_rf,0.35,0.4
-7,cov_ts_mlp,0.5,0.4
-7,csp_mlp,0.45,0.3
-8,cov_ts_lr,0.35,0.0
-8,csp_svm,0.3,0.1
-8,csp_lda,0.4,0.4
-8,csp_rf,0.25,0.2
-8,cov_ts_mlp,0.2,0.0
-8,csp_mlp,0.4,0.4
-9,cov_ts_lr,0.55,0.4
-9,csp_svm,0.4,0.1
-9,csp_lda,0.25,0.3
-9,csp_rf,0.35,0.25
-9,cov_ts_mlp,0.55,0.3
-9,csp_mlp,0.25,0.2
-Final,cov_ts_lr,0.40499999999999997,0.38899999999999996
-Final,csp_svm,0.475,0.469
-Final,csp_lda,0.465,0.471
-Final,csp_rf,0.44000000000000006,0.446
-Final,cov_ts_mlp,0.465,0.47300000000000003
-Final,csp_mlp,0.505,0.45200000000000007
+Batch,Pipeline,Accuracy,AUC,Status,Best Params
+0,cov_ts_lr,0.5,0.6,Dropped,{}
+1,cov_ts_lr,0.9,0.8,Accepted (CSD),{}
+2,cov_ts_lr,0.4,0.6,Dropped,{}
+3,cov_ts_lr,0.8,0.6,Accepted (CSD),{}
+4,cov_ts_lr,0.3,0.2,Dropped,{}
+5,cov_ts_lr,0.4,0.6,Dropped,{}
+6,cov_ts_lr,0.2,0.0,Dropped,{}
+7,cov_ts_lr,0.3,0.2,Dropped,{}
+8,cov_ts_lr,0.3,0.4,Dropped,{}
+9,cov_ts_lr,0.0,0.0,Dropped,{}
+Final,cov_ts_lr,0.65,0.75,Merged (2 batches),{}
+0,cov_ts_svm,0.6,0.8,Accepted (CSD),{}
+1,cov_ts_svm,0.7,0.8,Accepted (CSD),{}
+2,cov_ts_svm,0.5,0.6,Dropped,{}
+3,cov_ts_svm,0.6,0.6,Accepted (CSD),{}
+4,cov_ts_svm,0.6,0.8,Accepted (CSD),{}
+5,cov_ts_svm,0.4,0.6,Dropped,{}
+6,cov_ts_svm,0.3,0.2,Dropped,{}
+7,cov_ts_svm,0.5,0.4,Dropped,{}
+8,cov_ts_svm,0.4,0.2,Dropped,{}
+9,cov_ts_svm,0.2,0.0,Dropped,{}
+Final,cov_ts_svm,0.525,0.45,Merged (4 batches),{}
+0,cov_ts_mlp,0.6,0.6,Accepted (CSD),{}
+1,cov_ts_mlp,0.8,0.8,Accepted (CSD),{}
+2,cov_ts_mlp,0.5,0.6,Dropped,{}
+3,cov_ts_mlp,0.7,0.6,Accepted (CSD),{}
+4,cov_ts_mlp,0.4,0.2,Dropped,{}
+5,cov_ts_mlp,0.6,0.6,Accepted (CSD),{}
+6,cov_ts_mlp,0.4,0.4,Dropped,{}
+7,cov_ts_mlp,0.5,0.2,Dropped,{}
+8,cov_ts_mlp,0.4,0.6,Dropped,{}
+9,cov_ts_mlp,0.0,0.0,Dropped,{}
+Final,cov_ts_mlp,0.55,0.675,Merged (4 batches),{}
+0,cov_mdm,0.7,0.8,Accepted (CSD),{}
+1,cov_mdm,0.9,0.8,Accepted (CSD),{}
+2,cov_mdm,0.5,0.8,Dropped,{}
+3,cov_mdm,0.6,0.8,Accepted (CSD),{}
+4,cov_mdm,0.6,0.4,Accepted (CSD),{}
+5,cov_mdm,0.5,0.2,Dropped,{}
+6,cov_mdm,0.3,0.6,Dropped,{}
+7,cov_mdm,0.4,0.4,Dropped,{}
+8,cov_mdm,0.2,0.2,Dropped,{}
+9,cov_mdm,0.6,0.8,Accepted (CSD),{}
+Final,cov_mdm,0.45999999999999996,0.496,Merged (5 batches),{}

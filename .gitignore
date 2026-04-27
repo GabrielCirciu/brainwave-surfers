@@ -17,6 +17,8 @@ PythonBCI/data/raw/gold_data.npz
 /BuiltGame/*
 PythonBCI/data/raw/gold-data/*
 /PythonBCI/data/raw/gold-data/*
+PythonBCI/data/raw/gold-data-2/*
+/PythonBCI/data/raw/gold-data-2/*
 PythonBCI/src/__pycache__*
 /PythonBCI/src/__pycache__*
 

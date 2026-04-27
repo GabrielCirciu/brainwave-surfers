@@ -1,67 +1,45 @@
-Batch,Pipeline,Accuracy,AUC
-0,cov_ts_lr,0.5,0.5
-0,csp_svm,0.35,0.2
-0,csp_lda,0.4,0.2
-0,csp_rf,0.25,0.2
-0,cov_ts_mlp,0.25,0.2
-0,csp_mlp,0.3,0.2
-1,cov_ts_lr,0.5,0.5
-1,csp_svm,0.55,0.8
-1,csp_lda,0.7,0.7
-1,csp_rf,0.6,0.8
-1,cov_ts_mlp,0.35,0.3
-1,csp_mlp,0.75,0.7
-2,cov_ts_lr,0.75,0.7
-2,csp_svm,0.65,0.7
-2,csp_lda,0.7,0.7
-2,csp_rf,0.6,0.9
-2,cov_ts_mlp,0.75,0.7
-2,csp_mlp,0.7,0.7
-3,cov_ts_lr,0.7,0.8
-3,csp_svm,0.55,0.8
-3,csp_lda,0.6,0.6
-3,csp_rf,0.55,0.6
-3,cov_ts_mlp,0.75,0.8
-3,csp_mlp,0.6,0.7
-4,cov_ts_lr,0.5,0.5
-4,csp_svm,0.35,0.5
-4,csp_lda,0.3,0.3
-4,csp_rf,0.5,0.5
-4,cov_ts_mlp,0.2,0.3
-4,csp_mlp,0.45,0.4
-5,cov_ts_lr,0.5,0.5
-5,csp_svm,0.5,0.6
-5,csp_lda,0.5,0.6
-5,csp_rf,0.35,0.1
-5,cov_ts_mlp,0.2,0.2
-5,csp_mlp,0.45,0.6
-6,cov_ts_lr,0.5,0.5
-6,csp_svm,0.6,0.6
-6,csp_lda,0.5,0.6
-6,csp_rf,0.5,0.35
-6,cov_ts_mlp,0.5,0.6
-6,csp_mlp,0.55,0.6
-7,cov_ts_lr,0.5,0.5
-7,csp_svm,0.3,0.3
-7,csp_lda,0.3,0.2
-7,csp_rf,0.35,0.25
-7,cov_ts_mlp,0.4,0.4
-7,csp_mlp,0.4,0.5
-8,cov_ts_lr,0.5,0.7
-8,csp_svm,0.55,0.8
-8,csp_lda,0.5,0.6
-8,csp_rf,0.5,0.4
-8,cov_ts_mlp,0.5,0.7
-8,csp_mlp,0.45,0.6
-9,cov_ts_lr,0.5,0.5
-9,csp_svm,0.5,0.4
-9,csp_lda,0.5,0.4
-9,csp_rf,0.55,0.65
-9,cov_ts_mlp,0.6,0.4
-9,csp_mlp,0.7,0.5
-Final,cov_ts_lr,0.5,0.5
-Final,csp_svm,0.475,0.5050000000000001
-Final,csp_lda,0.5199999999999999,0.49399999999999994
-Final,csp_rf,0.525,0.526
-Final,cov_ts_mlp,0.48500000000000004,0.491
-Final,csp_mlp,0.5000000000000001,0.517
+Batch,Pipeline,Accuracy,AUC,Status,Best Params
+0,cov_ts_lr,0.5,0.8,Dropped,"{'clf__C': '10.0', 'cov__estimator': 'lwf', 'ts__metric': 'riemann'}"
+1,cov_ts_lr,0.5,0.6,Dropped,"{'clf__C': '0.1', 'cov__estimator': 'oas', 'ts__metric': 'logeuclid'}"
+2,cov_ts_lr,0.7,1.0,Accepted (CAR),"{'clf__C': '1.0', 'cov__estimator': 'oas', 'ts__metric': 'riemann'}"
+3,cov_ts_lr,0.7,0.8,Accepted (CAR),"{'clf__C': '0.1', 'cov__estimator': 'oas', 'ts__metric': 'logeuclid'}"
+4,cov_ts_lr,0.4,0.4,Dropped,"{'clf__C': '0.1', 'cov__estimator': 'lwf', 'ts__metric': 'logeuclid'}"
+5,cov_ts_lr,0.4,0.4,Dropped,"{'clf__C': '0.1', 'cov__estimator': 'oas', 'ts__metric': 'riemann'}"
+6,cov_ts_lr,0.7,0.6,Accepted (CAR),"{'clf__C': '0.1', 'cov__estimator': 'oas', 'ts__metric': 'riemann'}"
+7,cov_ts_lr,0.4,0.4,Dropped,"{'clf__C': '0.1', 'cov__estimator': 'oas', 'ts__metric': 'riemann'}"
+8,cov_ts_lr,0.6,0.4,Accepted (CAR),"{'clf__C': '0.1', 'cov__estimator': 'lwf', 'ts__metric': 'logeuclid'}"
+9,cov_ts_lr,0.5,0.6,Dropped,"{'clf__C': '0.1', 'cov__estimator': 'oas', 'ts__metric': 'logeuclid'}"
+Final,cov_ts_lr,0.5,0.5625,Merged (4 batches),"{'clf__C': '10.0', 'cov__estimator': 'lwf', 'ts__metric': 'riemann'}"
+0,cov_ts_svm,0.6,0.8,Accepted (CAR),"{'clf__C': '0.1', 'clf__gamma': 'scale', 'clf__kernel': 'rbf', 'cov__estimator': 'lwf', 'ts__metric': 'riemann'}"
+1,cov_ts_svm,0.6,0.6,Accepted (CAR),"{'clf__C': '0.1', 'clf__gamma': 'scale', 'clf__kernel': 'rbf', 'cov__estimator': 'oas', 'ts__metric': 'logeuclid'}"
+2,cov_ts_svm,0.7,1.0,Accepted (CAR),"{'clf__C': '0.1', 'clf__gamma': 'scale', 'clf__kernel': 'rbf', 'cov__estimator': 'oas', 'ts__metric': 'riemann'}"
+3,cov_ts_svm,0.6,0.8,Accepted (CAR),"{'clf__C': '0.1', 'clf__gamma': 'scale', 'clf__kernel': 'rbf', 'cov__estimator': 'oas', 'ts__metric': 'riemann'}"
+4,cov_ts_svm,0.5,0.7,Dropped,"{'clf__C': '0.1', 'clf__gamma': '0.1', 'clf__kernel': 'rbf', 'cov__estimator': 'oas', 'ts__metric': 'riemann'}"
+5,cov_ts_svm,0.4,0.4,Dropped,"{'clf__C': '0.1', 'clf__gamma': 'scale', 'clf__kernel': 'rbf', 'cov__estimator': 'oas', 'ts__metric': 'riemann'}"
+6,cov_ts_svm,0.7,0.6,Accepted (CAR),"{'clf__C': '0.1', 'clf__gamma': 'scale', 'clf__kernel': 'rbf', 'cov__estimator': 'oas', 'ts__metric': 'riemann'}"
+7,cov_ts_svm,0.5,0.5,Dropped,"{'clf__C': '0.1', 'clf__gamma': '0.1', 'clf__kernel': 'rbf', 'cov__estimator': 'oas', 'ts__metric': 'logeuclid'}"
+8,cov_ts_svm,0.7,0.8,Accepted (CAR),"{'clf__C': '0.1', 'clf__gamma': '0.1', 'clf__kernel': 'rbf', 'cov__estimator': 'lwf', 'ts__metric': 'logeuclid'}"
+9,cov_ts_svm,0.5,0.8,Dropped,"{'clf__C': '0.1', 'clf__gamma': 'scale', 'clf__kernel': 'rbf', 'cov__estimator': 'oas', 'ts__metric': 'riemann'}"
+Final,cov_ts_svm,0.5666666666666667,0.5944444444444443,Merged (6 batches),"{'clf__C': '1.0', 'clf__gamma': 'scale', 'clf__kernel': 'rbf', 'cov__estimator': 'oas', 'ts__metric': 'logeuclid'}"
+0,cov_ts_mlp,0.5,0.6,Dropped,"{'clf__activation': 'relu', 'clf__alpha': '0.0001', 'clf__hidden_layer_sizes': '(50, 50)', 'cov__estimator': 'oas', 'ts__metric': 'riemann'}"
+1,cov_ts_mlp,0.4,0.4,Dropped,"{'clf__activation': 'relu', 'clf__alpha': '0.0001', 'clf__hidden_layer_sizes': '(50,)', 'cov__estimator': 'oas', 'ts__metric': 'riemann'}"
+2,cov_ts_mlp,0.9,1.0,Accepted (CAR),"{'clf__activation': 'relu', 'clf__alpha': '0.0001', 'clf__hidden_layer_sizes': '(50,)', 'cov__estimator': 'oas', 'ts__metric': 'riemann'}"
+3,cov_ts_mlp,0.7,0.6,Accepted (CAR),"{'clf__activation': 'relu', 'clf__alpha': '0.0001', 'clf__hidden_layer_sizes': '(50,)', 'cov__estimator': 'oas', 'ts__metric': 'riemann'}"
+4,cov_ts_mlp,0.4,0.6,Dropped,"{'clf__activation': 'relu', 'clf__alpha': '0.0001', 'clf__hidden_layer_sizes': '(50, 50)', 'cov__estimator': 'oas', 'ts__metric': 'riemann'}"
+5,cov_ts_mlp,0.6,0.6,Accepted (CAR),"{'clf__activation': 'tanh', 'clf__alpha': '0.0001', 'clf__hidden_layer_sizes': '(50,)', 'cov__estimator': 'oas', 'ts__metric': 'riemann'}"
+6,cov_ts_mlp,0.6,0.6,Accepted (CAR),"{'clf__activation': 'relu', 'clf__alpha': '0.0001', 'clf__hidden_layer_sizes': '(50,)', 'cov__estimator': 'oas', 'ts__metric': 'riemann'}"
+7,cov_ts_mlp,0.4,0.4,Dropped,"{'clf__activation': 'relu', 'clf__alpha': '0.0001', 'clf__hidden_layer_sizes': '(100,)', 'cov__estimator': 'oas', 'ts__metric': 'riemann'}"
+8,cov_ts_mlp,0.5,0.4,Dropped,"{'clf__activation': 'relu', 'clf__alpha': '0.0001', 'clf__hidden_layer_sizes': '(50,)', 'cov__estimator': 'oas', 'ts__metric': 'riemann'}"
+9,cov_ts_mlp,0.7,0.6,Accepted (CAR),"{'clf__activation': 'relu', 'clf__alpha': '0.0001', 'clf__hidden_layer_sizes': '(50,)', 'cov__estimator': 'oas', 'ts__metric': 'riemann'}"
+Final,cov_ts_mlp,0.5199999999999999,0.5599999999999999,Merged (5 batches),"{'clf__activation': 'tanh', 'clf__alpha': '0.0001', 'clf__hidden_layer_sizes': '(50,)', 'cov__estimator': 'oas', 'ts__metric': 'riemann'}"
+0,cov_mdm,0.7,0.8,Accepted (CAR),"{'clf__metric': 'riemann', 'cov__estimator': 'lwf'}"
+1,cov_mdm,0.5,0.4,Dropped,"{'clf__metric': 'riemann', 'cov__estimator': 'oas'}"
+2,cov_mdm,0.8,0.8,Accepted (CAR),"{'clf__metric': 'riemann', 'cov__estimator': 'oas'}"
+3,cov_mdm,0.7,0.8,Accepted (CAR),"{'clf__metric': 'riemann', 'cov__estimator': 'oas'}"
+4,cov_mdm,0.4,0.6,Dropped,"{'clf__metric': 'riemann', 'cov__estimator': 'lwf'}"
+5,cov_mdm,0.5,0.8,Dropped,"{'clf__metric': 'riemann', 'cov__estimator': 'lwf'}"
+6,cov_mdm,0.3,0.4,Dropped,"{'clf__metric': 'riemann', 'cov__estimator': 'lwf'}"
+7,cov_mdm,0.4,0.6,Dropped,"{'clf__metric': 'riemann', 'cov__estimator': 'oas'}"
+8,cov_mdm,0.3,0.2,Dropped,"{'clf__metric': 'riemann', 'cov__estimator': 'lwf'}"
+9,cov_mdm,0.5,0.4,Dropped,"{'clf__metric': 'logeuclid', 'cov__estimator': 'lwf'}"
+Final,cov_mdm,0.5999999999999999,0.7111111111111111,Merged (3 batches),"{'clf__metric': 'riemann', 'cov__estimator': 'oas'}"
