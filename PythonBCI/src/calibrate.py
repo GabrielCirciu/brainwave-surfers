@@ -12,6 +12,9 @@ BUFFER_DUR = 4.0
 def main():
     
     session_input = input("Enter session name: ")
+    device_input = input("Enter device (Unicorn, hiAmp): ").strip()
+    if not device_input: device_input = "Unicorn"
+
     # Using hyphens instead of colons for time, as colons are invalid in Windows paths
     folder_time = datetime.now().strftime("%y-%m-%d-%H-%M")
     folder_name = f"{session_input}-{folder_time}"
@@ -202,18 +205,15 @@ def main():
                         epochs_timestamps.clear()
                         labels.clear()
 
-                        pipelines_to_try = ["cov_ts_lr", "csp_svm", "csp_lda", "csp_rf", "cov_ts_mlp", "csp_mlp"]
-                        if stream_channels >= 20:
-                            use_grid = False
-                        else:
-                            use_grid = True
+                        pipelines_to_try = ["aug_ts_lr", "aug_ts_svm", "aug_ts_mlp"]
+                        use_grid = False
                         use_aux = True
                         
                         best_overall_model = None
                         best_overall_score = -1
                         best_pipeline_name = ""
                         
-                        print("\nEvaluating pipelines on current batch...")
+                        print("\nEvaluating core pipelines on current batch...")
                         for pipe_name in pipelines_to_try:
                             try:
                                 model, report = train_model(
@@ -221,7 +221,9 @@ def main():
                                     pipeline_name=pipe_name,
                                     save_dir=model_save_dir,
                                     use_grid=use_grid,
-                                    use_aux=use_aux
+                                    use_aux=use_aux,
+                                    eeg_device=device_input,
+                                    no_save=True
                                 )
                                 score = report.get("accuracy", 0)
                                 if np.isnan(score):
@@ -231,7 +233,9 @@ def main():
                                     "Batch": batch_count - 1,
                                     "Pipeline": pipe_name,
                                     "Accuracy": score,
-                                    "AUC": report.get("auc", 0)
+                                    "AUC": report.get("auc", 0),
+                                    "Status": "Batch Evaluated",
+                                    "Best Params": str(report.get("best_params", {}))
                                 })
                                 
                                 print(f"  - {pipe_name}: {score:.4f}")
@@ -247,7 +251,7 @@ def main():
                             best_model_path = os.path.join(model_save_dir, f"batch_{batch_count - 1}_model.pkl")
                             with open(best_model_path, 'wb') as f:
                                 pickle.dump(best_overall_model, f)
-                            print(f"Best pipeline ({best_pipeline_name}) saved to: {best_model_path}\n")
+                            print(f"Best batch pipeline ({best_pipeline_name}) saved to: {best_model_path}\n")
                         
                 
                 else:
@@ -296,18 +300,15 @@ def main():
         np.savez(merged_path, eeg=eeg, aux=aux, labels=labels)
         print(f"Merged data saved to {merged_path}. Total shape: {eeg.shape}")
         
-        pipelines_to_try = ["cov_ts_lr", "csp_svm", "csp_lda", "csp_rf", "cov_ts_mlp", "csp_mlp"]
-        if stream_channels >= 20:
-            use_grid = False
-        else:
-            use_grid = True
+        pipelines_to_try = ["aug_ts_lr", "aug_ts_svm", "aug_ts_mlp"]
+        use_grid = False
         use_aux = True
 
         best_overall_model = None
         best_overall_score = -1
         best_pipeline_name = ""
         
-        print("\nEvaluating pipelines on FULL merged dataset...")
+        print("\nEvaluating core pipelines on FULL merged dataset...")
         for pipe_name in pipelines_to_try:
             try:
                 model, report = train_model(
@@ -315,7 +316,8 @@ def main():
                     pipeline_name=pipe_name,
                     save_dir=model_save_dir,
                     use_grid=use_grid,
-                    use_aux=use_aux
+                    use_aux=use_aux,
+                    eeg_device=device_input
                 )
                 score = report.get("accuracy", 0)
                 if np.isnan(score):
@@ -325,7 +327,9 @@ def main():
                     "Batch": "Final",
                     "Pipeline": pipe_name,
                     "Accuracy": score,
-                    "AUC": report.get("auc", 0)
+                    "AUC": report.get("auc", 0),
+                    "Status": "Merged (All batches)",
+                    "Best Params": str(report.get("best_params", {}))
                 })
                     
                 print(f"  - {pipe_name}: {score:.4f}")
@@ -354,7 +358,7 @@ def main():
     if metrics_log:
         csv_path = os.path.join(model_save_dir, "metrics.csv")
         with open(csv_path, 'w', newline='') as f:
-            writer = csv.DictWriter(f, fieldnames=["Batch", "Pipeline", "Accuracy", "AUC"])
+            writer = csv.DictWriter(f, fieldnames=["Batch", "Pipeline", "Accuracy", "AUC", "Status", "Best Params"])
             writer.writeheader()
             writer.writerows(metrics_log)
         print(f"\nMetrics log saved to: {csv_path}")

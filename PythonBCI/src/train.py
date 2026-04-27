@@ -381,10 +381,10 @@ def get_pipeline_and_grid(name):
     elif name == "aug_ts_lr":
         pipeline = Pipeline([
             ("aug", AugmentedDataset(order=2)),
-            ("cov", Covariances(estimator="oas")),
+            ("cov", Covariances(estimator="lwf")),
             ("ts", TangentSpace(metric="riemann")),
             ("scaler", StandardScaler()),
-            ("clf", LogisticRegression(max_iter=2000, solver="lbfgs", random_state=42)),
+            ("clf", LogisticRegression(C=0.1, max_iter=2000, solver="lbfgs", random_state=42)),
         ])
         param_grid = {
             "aug__order": [2],
@@ -399,7 +399,7 @@ def get_pipeline_and_grid(name):
             ("cov", Covariances(estimator="oas")),
             ("ts", TangentSpace(metric="riemann")),
             ("scaler", StandardScaler()),
-            ("clf", SVC(probability=True, random_state=42)),
+            ("clf", SVC(C=1.0, kernel='rbf', probability=True, random_state=42)),
         ])
         param_grid = {
             "aug__order": [2],
@@ -415,7 +415,7 @@ def get_pipeline_and_grid(name):
             ("cov", Covariances(estimator="oas")),
             ("ts", TangentSpace(metric="riemann")),
             ("scaler", StandardScaler()),
-            ("clf", MLPClassifier(max_iter=2000, random_state=42)),
+            ("clf", MLPClassifier(hidden_layer_sizes=(100,), max_iter=2000, random_state=42)),
         ])
         param_grid = {
             "aug__order": [2],
