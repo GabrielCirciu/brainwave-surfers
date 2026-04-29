@@ -7,8 +7,14 @@ import sys
 import pydirectinput
 import os
 
+import argparse
+
 def main():
-    model_path = os.path.join("PythonBCI", "models", "myta-26-04-24-11-19", "model.pkl")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model_path", default=os.path.join("PythonBCI", "models", "model.pkl"))
+    args = parser.parse_args()
+    
+    model_path = args.model_path
     try:
         with open(model_path, 'rb') as f:
             clf = pickle.load(f)
@@ -83,7 +89,10 @@ def main():
     EEG_CHANNELS = 8
     
     # We create an MNE info object to use their filter function 
-    ch_names = [f'EEG {i+1}' for i in range(EEG_CHANNELS)]
+    if EEG_CHANNELS == 8:
+        ch_names = ["FC3", "C3", "CP3", "Cz", "CPz", "FC4", "C4", "CP4"]
+    else:
+        ch_names = [f'EEG {i+1}' for i in range(EEG_CHANNELS)]
     mne_info = mne.create_info(ch_names=ch_names, sfreq=fs, ch_types=['eeg'] * EEG_CHANNELS)
 
     print("Waiting for marker from Unity to start 4-second recording...")
@@ -151,8 +160,13 @@ def main():
                             trial_ts = np.pad(trial_ts, (0, pad_width), mode='edge')
                     
                         # Split the channels: 0-7 are EEG, 8-16 are AUX (accelerometer, gyro, battery, etc.)
-                        eeg_data = trial_data[:, :8]
+                        eeg_data = trial_data[:, :8].astype(np.float64)
                         aux_data = trial_data[:, 8:17]
+                        
+                        # Normalize trial to std=1 to match online_refine.py scaling fix
+                        trial_std = np.std(eeg_data)
+                        if trial_std > 0:
+                            eeg_data = eeg_data / trial_std
                         
                         # Append timestamp to the last column of aux_data (making it 10 columns)
                         ts_col = trial_ts.reshape(-1, 1)
@@ -161,12 +175,34 @@ def main():
                         # 3. Preparation & Inference
                         print(f"4 seconds elapsed! EEG Shape: {eeg_data.shape} | AUX: {aux_data_with_ts.shape}. Running Inference...")
                         
-                        # Convert to MNE format: (1, channels, samples) and Volts
-                        X_raw = eeg_data.T.reshape(1, EEG_CHANNELS, BUFFER_SAMPLES) * 1e-6
+                        # Convert to MNE format: (1, channels, samples)
+                        X_raw_uV = eeg_data.T.reshape(1, EEG_CHANNELS, BUFFER_SAMPLES)
                         
-                        # 4. Filter data 8-30 Hz
+                        # 4. Filter data (Match train.py)
+                        # Notch filter (50 Hz)
+                        for freq in np.arange(50, fs / 2, 50):
+                            X_raw_uV = mne.filter.notch_filter(
+                                X_raw_uV.astype(np.float64), 
+                                fs, 
+                                freq, 
+                                method='iir',
+                                verbose=False
+                            )
+                            
+                        # Convert to Volts
+                        X_raw = X_raw_uV * 1e-6
                         X_epochs = mne.EpochsArray(X_raw, mne_info, verbose=False)
-                        X_epochs.filter(8., 30., fir_design='firwin', verbose=False)
+                        
+                        # Bandpass filter (8-15 Hz)
+                        X_epochs.filter(8., 15., fir_design='firwin', verbose=False)
+                        
+                        # Apply Surface Laplacian (CSD)
+                        try:
+                            X_epochs.set_montage("standard_1020")
+                            X_epochs = mne.preprocessing.compute_current_source_density(X_epochs)
+                        except Exception as e:
+                            print(f"CSD failed: {e}, falling back to CAR")
+                            X_epochs.set_eeg_reference("average", ch_type="eeg", verbose=False)
                         
                         # Drop the oldest 0.5 seconds of the buffer to match training curve
                         X_epochs.crop(tmin=0.5)

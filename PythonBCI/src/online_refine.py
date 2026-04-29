@@ -57,7 +57,15 @@ def main():
     base_eeg = np.concatenate(all_base_eeg, axis=0)
     base_aux = np.concatenate(all_base_aux, axis=0)
     base_labels = np.concatenate(all_base_labels, axis=0)
-    print(f"Loaded {len(base_labels)} trials from base dataset.")
+    
+    # IMPORTANT: Normalize base data trials to std=1 to fix scale mismatches 
+    # between gold data and live streaming data.
+    for i in range(base_eeg.shape[0]):
+        trial_std = np.std(base_eeg[i])
+        if trial_std > 0:
+            base_eeg[i] = base_eeg[i] / trial_std
+            
+    print(f"Loaded {len(base_labels)} trials from base dataset. (Normalized)")
 
     # 3. LSL Setup
     print("Looking for UnityMarkers stream...")
@@ -204,6 +212,11 @@ def main():
                             ts_col = np.pad(ts_col, ((0, BUFFER_SAMPLES - ts_col.shape[0]), (0, 0)), mode='edge')
                         aux_data_full = ts_col
                     
+                    # Normalize new trial to std=1 to match base data
+                    trial_std = np.std(eeg_data)
+                    if trial_std > 0:
+                        eeg_data = eeg_data / trial_std
+                        
                     new_epochs_eeg.append(eeg_data)
                     new_epochs_aux.append(aux_data_full)
                     new_labels.append(current_trial_class)
