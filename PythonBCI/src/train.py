@@ -184,8 +184,8 @@ def load_and_preprocess(data_path, use_aux=False, resample_fs=False, eeg_device=
         epochs = epochs.resample(250.0, verbose=False)
         fs = 250.0
 
-    print("Filtering data (8-15 Hz)...")
-    epochs.filter(8.0, 15.0, picks=["eeg", "misc"], fir_design="firwin", skip_by_annotation="edge", verbose=False) 
+    print("Filtering data (8-30 Hz)...")
+    epochs.filter(8.0, 30.0, picks=["eeg", "misc"], fir_design="firwin", skip_by_annotation="edge", verbose=False) 
 
     # Log amplitude to help debug scaling issues
     max_amp = np.max(np.abs(epochs.get_data(picks='eeg'))) * 1e6

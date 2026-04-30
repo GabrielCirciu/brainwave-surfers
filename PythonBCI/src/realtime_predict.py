@@ -193,8 +193,8 @@ def main():
                         X_raw = X_raw_uV * 1e-6
                         X_epochs = mne.EpochsArray(X_raw, mne_info, verbose=False)
                         
-                        # Bandpass filter (8-15 Hz)
-                        X_epochs.filter(8., 15., fir_design='firwin', verbose=False)
+                        # Bandpass filter (8-30 Hz)
+                        X_epochs.filter(8., 30., fir_design='firwin', verbose=False)
                         
                         # Apply Surface Laplacian (CSD)
                         try:
