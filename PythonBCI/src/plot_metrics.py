@@ -36,8 +36,17 @@ def plot_metrics(csv_path):
     ax1 = fig.add_subplot(gs[0, 0:3])
     for pipe in pipelines:
         pipe_data = df_batches[df_batches['Pipeline'] == pipe].sort_values('Batch')
-        ax1.plot(pipe_data['Batch'], pipe_data['Accuracy'], marker='o', label=pipe, linewidth=2, color=pipe_colors[pipe])
-    ax1.set_title('Accuracy Trend per Batch')
+        ax1.plot(pipe_data['Batch'], pipe_data['Accuracy'], label=pipe, linewidth=2, color=pipe_colors[pipe], zorder=1)
+        
+        if 'Status' in pipe_data.columns:
+            accepted = pipe_data[pipe_data['Status'].str.contains('Accepted', na=False)]
+            dropped = pipe_data[pipe_data['Status'].str.contains('Dropped', na=False)]
+            ax1.scatter(accepted['Batch'], accepted['Accuracy'], marker='o', s=80, color=pipe_colors[pipe], edgecolor='white', zorder=2)
+            ax1.scatter(dropped['Batch'], dropped['Accuracy'], marker='x', s=80, color=pipe_colors[pipe], zorder=2)
+        else:
+            ax1.scatter(pipe_data['Batch'], pipe_data['Accuracy'], marker='o', s=80, color=pipe_colors[pipe], zorder=2)
+            
+    ax1.set_title('Accuracy Trend per Batch (o=Accepted, x=Dropped)')
     ax1.set_xlabel('Batch')
     ax1.set_ylabel('Accuracy')
     ax1.axhline(y=0.55, color='r', linestyle='--', alpha=0.3, label='Threshold (0.55)')
@@ -48,8 +57,17 @@ def plot_metrics(csv_path):
     ax2 = fig.add_subplot(gs[0, 3:6])
     for pipe in pipelines:
         pipe_data = df_batches[df_batches['Pipeline'] == pipe].sort_values('Batch')
-        ax2.plot(pipe_data['Batch'], pipe_data['AUC'], marker='s', label=pipe, linewidth=2, color=pipe_colors[pipe])
-    ax2.set_title('AUC Trend per Batch')
+        ax2.plot(pipe_data['Batch'], pipe_data['AUC'], label=pipe, linewidth=2, color=pipe_colors[pipe], zorder=1)
+        
+        if 'Status' in pipe_data.columns:
+            accepted = pipe_data[pipe_data['Status'].str.contains('Accepted', na=False)]
+            dropped = pipe_data[pipe_data['Status'].str.contains('Dropped', na=False)]
+            ax2.scatter(accepted['Batch'], accepted['AUC'], marker='s', s=80, color=pipe_colors[pipe], edgecolor='white', zorder=2)
+            ax2.scatter(dropped['Batch'], dropped['AUC'], marker='x', s=80, color=pipe_colors[pipe], zorder=2)
+        else:
+            ax2.scatter(pipe_data['Batch'], pipe_data['AUC'], marker='s', s=80, color=pipe_colors[pipe], zorder=2)
+            
+    ax2.set_title('AUC Trend per Batch (s=Accepted, x=Dropped)')
     ax2.set_xlabel('Batch')
     ax2.set_ylabel('AUC')
     ax2.axhline(y=0.5, color='gray', linestyle=':', alpha=0.5)
@@ -68,7 +86,9 @@ def plot_metrics(csv_path):
     ax3.set_title('Final Model Comparison (Merged Data)')
     ax3.set_ylim(0, 1.0)
     ax3.grid(axis='y', alpha=0.3)
-    ax3.legend(title='Pipeline', bbox_to_anchor=(1.05, 1), loc='upper left')
+    handles, labels = ax3.get_legend_handles_labels()
+    if handles:
+        ax3.legend(handles=handles, labels=labels, title='Pipeline', bbox_to_anchor=(1.05, 1), loc='upper left')
     
     # Add value labels on bars
     for p in ax3.patches:
