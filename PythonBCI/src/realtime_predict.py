@@ -9,6 +9,31 @@ import os
 
 import argparse
 
+def apply_oscar(eeg_data, fs):
+    """
+    Online Signal Conditioning and Artifact Removal (OSCAR-like).
+    eeg_data: (samples, channels)
+    """
+    # 1. Basic filtering (required for OSCAR to see brain components clearly)
+    # We transpose to (channels, samples) for MNE and Processing
+    X = eeg_data.T
+    
+    # Highpass (1Hz) and Notch (50Hz) using IIR filters (Better for short 4s segments)
+    X = mne.filter.filter_data(X.astype(np.float64), fs, 1.0, None, method='iir', verbose=False)
+    X = mne.filter.notch_filter(X, fs, [50], method='iir', verbose=False)
+    
+    # 2. Spatiotemporal Whitening (Artifact Removal)
+    # Detects and attenuates high-variance directions (muscle/movement)
+    cov = np.cov(X)
+    evals, evecs = np.linalg.eigh(cov)
+    threshold = np.median(evals) * 15.0
+    evals_capped = np.minimum(evals, threshold)
+    whitening_mat = evecs @ np.diag(np.sqrt(evals_capped / (evals + 1e-9))) @ evecs.T
+    X_clean = whitening_mat @ X
+    
+    # 3. Transpose back to (samples, channels)
+    return X_clean.T
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_path", default=os.path.join("PythonBCI", "models", "model.pkl"))
@@ -162,6 +187,9 @@ def main():
                         # Split the channels: 0-7 are EEG, 8-16 are AUX (accelerometer, gyro, battery, etc.)
                         eeg_data = trial_data[:, :8].astype(np.float64)
                         aux_data = trial_data[:, 8:17]
+                        
+                        # Apply OSCAR cleaning (Match online_refine.py)
+                        eeg_data = apply_oscar(eeg_data, fs)
                         
                         # Normalize trial to std=1 to match online_refine.py scaling fix
                         trial_std = np.std(eeg_data)

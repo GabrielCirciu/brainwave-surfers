@@ -117,10 +117,11 @@ def load_and_preprocess(data_path, use_aux=False, resample_fs=False, eeg_device=
         ch_names = base_names + [f"EEG {i+1}" for i in range(len(base_names), epochs_data.shape[1])]
     elif eeg_device == "Unicorn":
         print("Unicorn device detected. Using all channels.")
-        # We check if the amplitude is suspiciously large, if so - divide by 1000.
-        if np.max(np.abs(epochs_data)) > 1e-4:
-            print("Scaling Unicorn data from Volts to Microvolts...")
-            epochs_data = epochs_data / 1000
+        # We check if the amplitude is suspiciously large (e.g. > 100), 
+        # which usually means raw units that need to be scaled to Microvolts.
+        if np.max(np.abs(epochs_data)) > 100.0:
+            print("Scaling Unicorn data from raw units to Microvolts...")
+            epochs_data = epochs_data / 1000.0
         base_names = ["FC3", "C3", "CP3", "Cz", "CPz", "FC4", "C4", "CP4"]
         ch_names = base_names + [f"EEG {i+1}" for i in range(len(base_names), epochs_data.shape[1])]
     elif eeg_device == "gold":

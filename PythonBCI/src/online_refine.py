@@ -7,7 +7,33 @@ import pickle
 import glob
 import csv
 import argparse
+import mne
 from train import train_model
+
+def apply_oscar(eeg_data, fs):
+    """
+    Online Signal Conditioning and Artifact Removal (OSCAR-like).
+    eeg_data: (samples, channels)
+    """
+    # 1. Basic filtering (required for OSCAR to see brain components clearly)
+    # We transpose to (channels, samples) for MNE and Processing
+    X = eeg_data.T
+    
+    # Highpass (1Hz) and Notch (50Hz) using IIR filters (Better for short 4s segments)
+    X = mne.filter.filter_data(X.astype(np.float64), fs, 1.0, None, method='iir', verbose=False)
+    X = mne.filter.notch_filter(X, fs, [50], method='iir', verbose=False)
+    
+    # 2. Spatiotemporal Whitening (Artifact Removal)
+    # Detects and attenuates high-variance directions (muscle/movement)
+    cov = np.cov(X)
+    evals, evecs = np.linalg.eigh(cov)
+    threshold = np.median(evals) * 15.0
+    evals_capped = np.minimum(evals, threshold)
+    whitening_mat = evecs @ np.diag(np.sqrt(evals_capped / (evals + 1e-9))) @ evecs.T
+    X_clean = whitening_mat @ X
+    
+    # 3. Transpose back to (samples, channels)
+    return X_clean.T
 
 BUFFER_DUR = 4.0
 
@@ -58,14 +84,18 @@ def main():
     base_aux = np.concatenate(all_base_aux, axis=0)
     base_labels = np.concatenate(all_base_labels, axis=0)
     
-    # IMPORTANT: Normalize base data trials to std=1 to fix scale mismatches 
+    # IMPORTANT: Apply OSCAR and Normalize base data trials to std=1 to fix scale mismatches 
     # between gold data and live streaming data.
+    # We use a default fs of 250 for base data if not specified, though it will be synced later.
+    base_fs = 250.0 
+    print("Applying OSCAR cleaning to base data...")
     for i in range(base_eeg.shape[0]):
+        base_eeg[i] = apply_oscar(base_eeg[i], base_fs)
         trial_std = np.std(base_eeg[i])
         if trial_std > 0:
             base_eeg[i] = base_eeg[i] / trial_std
             
-    print(f"Loaded {len(base_labels)} trials from base dataset. (Normalized)")
+    print(f"Loaded and cleaned {len(base_labels)} trials from base dataset.")
 
     # 3. LSL Setup
     print("Looking for UnityMarkers stream...")
@@ -111,7 +141,8 @@ def main():
             base_aux = np.pad(base_aux, ((0,0), (0,0), (0, pad_c)), mode='constant')
 
     # 4. Recording State
-    new_epochs_eeg = []
+    new_epochs_eeg_clean = []
+    new_epochs_eeg_raw = []
     new_epochs_aux = []
     new_labels = []
     
@@ -212,12 +243,17 @@ def main():
                             ts_col = np.pad(ts_col, ((0, BUFFER_SAMPLES - ts_col.shape[0]), (0, 0)), mode='edge')
                         aux_data_full = ts_col
                     
-                    # Normalize new trial to std=1 to match base data
-                    trial_std = np.std(eeg_data)
+                    # Keep raw version before OSCAR
+                    eeg_data_raw = eeg_data.copy()
+                    
+                    # Apply OSCAR and Normalize new trial to std=1 to match base data
+                    eeg_data_clean = apply_oscar(eeg_data_raw, sampling_frequency)
+                    trial_std = np.std(eeg_data_clean)
                     if trial_std > 0:
-                        eeg_data = eeg_data / trial_std
+                        eeg_data_clean = eeg_data_clean / trial_std
                         
-                    new_epochs_eeg.append(eeg_data)
+                    new_epochs_eeg_clean.append(eeg_data_clean)
+                    new_epochs_eeg_raw.append(eeg_data_raw)
                     new_epochs_aux.append(aux_data_full)
                     new_labels.append(current_trial_class)
                     
@@ -227,15 +263,23 @@ def main():
                         print(f"\n--- Batch {batch_count} Complete ---")
                         print("Saving new data and retraining refined model...")
                         
-                        # Save the new batch
-                        new_eeg_arr = np.array(new_epochs_eeg)
+                        # Save the new batch (Clean and Raw versions)
+                        new_eeg_clean_arr = np.array(new_epochs_eeg_clean)
+                        new_eeg_raw_arr = np.array(new_epochs_eeg_raw)
                         new_aux_arr = np.array(new_epochs_aux)
                         new_labels_arr = np.array(new_labels)
-                        batch_path = os.path.join(output_dir, f"batch_{batch_count}.npz")
-                        np.savez(batch_path, eeg=new_eeg_arr, aux=new_aux_arr, labels=new_labels_arr)
                         
-                        # Merge Base + ALL recorded batches in THIS session
+                        batch_path_clean = os.path.join(output_dir, f"batch_{batch_count}.npz")
+                        batch_path_raw = os.path.join(output_dir, f"batch_{batch_count}_raw.npz")
+                        
+                        np.savez(batch_path_clean, eeg=new_eeg_clean_arr, aux=new_aux_arr, labels=new_labels_arr)
+                        np.savez(batch_path_raw, eeg=new_eeg_raw_arr, aux=new_aux_arr, labels=new_labels_arr)
+                        
+                        # Merge Base + ALL recorded batches in THIS session (using clean data for training)
                         session_batches = sorted(glob.glob(os.path.join(output_dir, "batch_*.npz")))
+                        # Filter out the raw files so we only train on clean data
+                        session_batches = [b for b in session_batches if "_raw.npz" not in b]
+                        
                         all_session_eeg = []
                         all_session_aux = []
                         all_session_labels = []
@@ -309,7 +353,7 @@ def main():
                             writer.writerows(metrics_log)
                         
                         batch_count += 1
-                        new_epochs_eeg, new_epochs_aux, new_labels = [], [], []
+                        new_epochs_eeg_clean, new_epochs_eeg_raw, new_epochs_aux, new_labels = [], [], [], []
 
             elif cmd == "CALIBRATION_END":
                 break

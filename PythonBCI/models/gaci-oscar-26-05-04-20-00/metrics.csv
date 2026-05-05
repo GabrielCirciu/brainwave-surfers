@@ -1,0 +1,34 @@
+Batch,Pipeline,Accuracy,AUC,Status,Best Params
+0,aug_ts_lr,0.5,0.4,Dropped,{}
+1,aug_ts_lr,0.2,0.2,Dropped,{}
+2,aug_ts_lr,0.7,0.6,Accepted (CSD),{}
+3,aug_ts_lr,0.2,0.0,Dropped,{}
+4,aug_ts_lr,0.5,0.2,Dropped,{}
+5,aug_ts_lr,0.5,0.6,Dropped,{}
+6,aug_ts_lr,0.8,1.0,Accepted (CSD),{}
+7,aug_ts_lr,0.3,0.0,Dropped,{}
+8,aug_ts_lr,0.6,0.6,Accepted (CSD),{}
+9,aug_ts_lr,0.3,0.2,Dropped,{}
+Final,aug_ts_lr,0.36666666666666664,0.4222222222222222,Merged (3 batches),{}
+0,aug_ts_svm,0.6,0.4,Accepted (CAR),{}
+1,aug_ts_svm,0.1,0.0,Dropped,{}
+2,aug_ts_svm,0.7,0.8,Accepted (CAR),{}
+3,aug_ts_svm,0.1,0.0,Dropped,{}
+4,aug_ts_svm,0.2,0.4,Dropped,{}
+5,aug_ts_svm,0.3,0.2,Dropped,{}
+6,aug_ts_svm,0.6,0.8,Accepted (CAR),{}
+7,aug_ts_svm,0.3,0.0,Dropped,{}
+8,aug_ts_svm,0.3,0.2,Dropped,{}
+9,aug_ts_svm,0.1,0.0,Dropped,{}
+Final,aug_ts_svm,0.5,0.48888888888888893,Merged (3 batches),{}
+0,aug_ts_mlp,0.6,0.4,Accepted (CSD),{}
+1,aug_ts_mlp,0.2,0.2,Dropped,{}
+2,aug_ts_mlp,0.7,0.6,Accepted (CSD),{}
+3,aug_ts_mlp,0.1,0.0,Dropped,{}
+4,aug_ts_mlp,0.4,0.2,Dropped,{}
+5,aug_ts_mlp,0.5,0.4,Dropped,{}
+6,aug_ts_mlp,0.4,0.8,Dropped,{}
+7,aug_ts_mlp,0.1,0.0,Dropped,{}
+8,aug_ts_mlp,0.4,0.4,Dropped,{}
+9,aug_ts_mlp,0.7,0.8,Accepted (CSD),{}
+Final,aug_ts_mlp,0.6333333333333333,0.7333333333333334,Merged (3 batches),{}
