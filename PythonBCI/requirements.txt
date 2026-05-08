@@ -2,6 +2,7 @@ mne
 scikit-learn
 pylsl
 numpy
+pandas
 scipy
 moabb
 pydirectinput

@@ -1,0 +1,7 @@
+config,model,accuracy,rocauc
+22 Channels,Cov + TS + LR,0.831,0.885
+22 Channels,EEGNetv4,0.615,0.743
+22 Channels,EEGSimpleConv,0.677,0.790
+8 Channels,Cov + TS + LR,0.769,0.826
+8 Channels,EEGNetv4,0.650,0.769
+8 Channels,EEGSimpleConv,0.664,0.790

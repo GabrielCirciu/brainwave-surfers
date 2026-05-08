@@ -1,4 +1,0 @@
-Batch,Pipeline,Accuracy,AUC,Status,Best Params
--1,aug_ts_lr,0.9098608590441621,0.9741209444538814,Baseline (Gold Only),{}
--1,aug_ts_svm,0.902843315184513,0.9745710888398165,Baseline (Gold Only),{}
--1,aug_ts_mlp,0.8960677555958864,0.9687786648547647,Baseline (Gold Only),{}

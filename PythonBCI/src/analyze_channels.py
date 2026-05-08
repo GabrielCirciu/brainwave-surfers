@@ -1,7 +1,8 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
 
-def analyze_channels(file_path):
+
+def analyze_channels(file_path: str):
     try:
         df = pd.read_csv(file_path)
         channels = df.iloc[:, 1:].values
@@ -19,7 +20,8 @@ def analyze_channels(file_path):
     except Exception as e:
         print(f"An error occurred: {e}")
 
+
 if __name__ == "__main__":
     csv_file = input("Enter the CSV file name: ")
-    file_path = 'PythonBCI/data/processed/' + csv_file
+    file_path = "PythonBCI/data/processed/" + csv_file
     analyze_channels(file_path)

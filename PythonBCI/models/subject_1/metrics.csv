@@ -1,4 +1,0 @@
-Batch,Pipeline,Accuracy,AUC,Status,Best Params
-Final,aug_ts_lr,0.9065335753176044,0.9734244946492272,Merged (29 batches),"{'aug__order': '2', 'clf__C': '0.1', 'cov__estimator': 'oas'}"
-Final,aug_ts_svm,0.9099213551119177,0.9728809240699847,Merged (29 batches),"{'aug__order': '2', 'clf__C': '1.0', 'clf__kernel': 'rbf', 'cov__estimator': 'lwf'}"
-Final,aug_ts_mlp,0.9030852994555353,0.968872091048072,Merged (29 batches),"{'aug__order': '2', 'clf__hidden_layer_sizes': '(50,)'}"
