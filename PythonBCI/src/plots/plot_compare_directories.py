@@ -5,26 +5,9 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 from train import train_model
 
-# ---------------------------------------------------------
-# UPDATE THESE VARIABLES WITH YOUR 5 DIRECTORY PATHS
-# ---------------------------------------------------------
 DATA_DIRS = [
-    #r".\PythonBCI\data\raw\anaj-oscar-26-05-04-20-47\raw",
-    #r".\PythonBCI\data\raw\gaci\gaci-26-04-22-18-49",
-    #r".\PythonBCI\data\raw\kaje-26-04-29-13-26",
-    #r".\PythonBCI\data\raw\myta\myta-26-04-23-10-47",
-    #r".\PythonBCI\data\raw\olta-26-05-07-18-58\raw",
-    #r".\PythonBCI\data\raw\pemi-oscar-26-05-05-15-14\raw",
-    #r".\PythonBCI\data\raw\vikt-26-04-29-14-07",
-    r".\PythonBCI\data\raw\gold-data-2\stripped\subject_1",
-    r".\PythonBCI\data\raw\gold-data-2\stripped\subject_2",
-    r".\PythonBCI\data\raw\gold-data-2\stripped\subject_3",
-    r".\PythonBCI\data\raw\gold-data-2\stripped\subject_4",
-    r".\PythonBCI\data\raw\gold-data-2\stripped\subject_5",
-    r".\PythonBCI\data\raw\gold-data-2\stripped\subject_6",
-    r".\PythonBCI\data\raw\gold-data-2\stripped\subject_7",
-    r".\PythonBCI\data\raw\gold-data-2\stripped\subject_8",
-    r".\PythonBCI\data\raw\gold-data-2\stripped\subject_9",
+    #r".\PythonBCI\data\raw\1\raw",
+    #r".\PythonBCI\data\raw\2",
 ]
 
 # ---------------------------------------------------------
