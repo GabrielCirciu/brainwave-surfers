@@ -27,7 +27,6 @@ def load_gold_data(file_path):
 def main():
     print("Starting Mock End-to-End BCI Pipeline...")
 
-    # Load Model
     model_path = os.path.join("PythonBCI", "models", "model.pkl")
     try:
         with open(model_path, 'rb') as f:
@@ -37,14 +36,12 @@ def main():
         print(f"Error: {model_path} not found!")
         sys.exit(1)
 
-    # Load Gold Data (defaulting to subject_1, batch_0 based on your current setup)
     gold_data_path = os.path.join('PythonBCI', 'data', 'raw', 'gold-data', 'subject_1', 'batch_0.npz')
     if not os.path.exists(gold_data_path):
         gold_data_path = input(f"Could not find {gold_data_path}.\nEnter path to gold data .npz file: ")
         
     left_trials, right_trials = load_gold_data(gold_data_path)
 
-    # Setting up the UnityMarkers connection to receive triggers
     print("\nLooking for UnityMarkers stream... (Make sure Unity is Playing!)")
     marker_streams = []
     while not marker_streams:
@@ -53,14 +50,12 @@ def main():
             print("Still waiting for UnityMarkers stream...")
             time.sleep(1)
             
-    # Connect to ALL found UnityMarkers streams (in case there are multiple in the scene)
     marker_inlets = [StreamInlet(info) for info in marker_streams]
     print(f"Connected to {len(marker_inlets)} UnityMarkers stream(s)!")
 
     fs = 250
     EEG_CHANNELS = 8
     
-    # We create an MNE info object to use their filter function 
     ch_names = [f'EEG {i+1}' for i in range(EEG_CHANNELS)]
     mne_info = mne.create_info(ch_names=ch_names, sfreq=fs, ch_types=['eeg'] * EEG_CHANNELS)
 
@@ -68,13 +63,10 @@ def main():
     
     try:
         while True:
-            # We poll all active marker inlets
             for inlet in marker_inlets:
                 try:
                     marker, _ = inlet.pull_sample(timeout=0.0)
                 except Exception as e:
-                    # If one stream dies, we just ignore it. 
-                    # Unity might have destroyed an object but kept the game running.
                     continue
 
                 if marker:
@@ -86,13 +78,11 @@ def main():
                     if cmd == "OBSTACLE_LEFT":
                         print(f"\nReceived marker: {cmd}")
                         print(f"Sending signal: RIGHT")
-                        # Obstacle is on the left -> dodge RIGHT
                         target_trials = right_trials
                         target_label_name = "RIGHT"
                     elif cmd == "OBSTACLE_RIGHT":
                         print(f"\nReceived marker: {cmd}")
                         print(f"Sending signal: LEFT")
-                        # Obstacle is on the right -> dodge LEFT
                         target_trials = left_trials
                         target_label_name = "LEFT"
                     
@@ -101,10 +91,8 @@ def main():
                             print(f"Warning: No trials available for {target_label_name} in the loaded gold data!")
                             continue
                             
-                        # Pick a random trial matching the required class
                         trial_data = random.choice(target_trials)
                         
-                        # Ensure 4 seconds length
                         BUFFER_SAMPLES = int(fs * 4.0)
                         actual_length = trial_data.shape[0]
                         if actual_length >= BUFFER_SAMPLES:
@@ -113,24 +101,19 @@ def main():
                             pad_width = BUFFER_SAMPLES - actual_length
                             trial_data = np.pad(trial_data, ((0, pad_width), (0, 0)), mode='edge')
                             
-                        # Convert to MNE format: (1, channels, samples) and Volts
                         scale = 1e-6 if np.max(np.abs(trial_data)) > 1e-3 else 1.0
                         X_raw = trial_data.T.reshape(1, EEG_CHANNELS, BUFFER_SAMPLES) * scale
                         
-                        # Filter data 8-30 Hz
                         X_epochs = mne.EpochsArray(X_raw, mne_info, verbose=False)
                         X_epochs.filter(8., 30., fir_design='firwin', verbose=False)
                         
-                        # Drop the oldest 0.5 seconds
                         X_epochs.crop(tmin=0.5)
                         
                         X_filtered = X_epochs.get_data(copy=True)
                         
-                        # Predict Probabilities
                         probs = clf.predict_proba(X_filtered)[0] 
                         predicted_class = np.argmax(probs)
                         
-                        # Simulate Keypress (Hold for a few ms so Unity's Update loop reliably catches it)
                         if predicted_class == 0:
                             print(f"PREDICTION: (L: {probs[0]:.2f} | R: {probs[1]:.2f}) -> Pressing 'left' key!\n")
                             pydirectinput.keyDown('left')

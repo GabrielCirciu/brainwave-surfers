@@ -10,10 +10,7 @@ DATA_DIRS = [
     #r".\PythonBCI\data\raw\2",
 ]
 
-# ---------------------------------------------------------
-
 def main():
-    # LaTeX/Overleaf friendly font sizes
     plt.rcParams.update({
         'font.size': 12,
         'axes.labelsize': 14,
@@ -123,7 +120,6 @@ def main():
             except Exception as e:
                 print(f"      Error evaluating final {pipe}: {e}")
                 
-            # Cleanup temp file
             try:
                 os.remove(pipe_merged_path)
             except:
@@ -131,10 +127,8 @@ def main():
 
         final_results.append(final_dataset_res)
 
-    # Plotting
     fig, (ax_acc, ax_auc) = plt.subplots(1, 2, figsize=(10, 5))
     
-    # Generate distinct colors for datasets
     cmap = plt.get_cmap('tab10')
     dataset_colors = [cmap(i % 10) for i in range(len(DATA_DIRS))]
     
@@ -154,24 +148,20 @@ def main():
         if box_data:
             bplot = ax.boxplot(box_data, patch_artist=True, tick_labels=box_labels)
             
-            # Make the boxes colorful
             box_colors = ['darkorange', 'dodgerblue', 'forestgreen']
             for patch, color in zip(bplot['boxes'], box_colors):
                 patch.set_facecolor(color)
                 patch.set_alpha(0.6)
                 
-            # Customize medians and whiskers
             for median in bplot['medians']:
                 median.set(color='black', linewidth=1.5)
                 
-            # Add scatter dots
             for p_idx, pipe in enumerate(pipelines):
                 box_idx = p_idx + 1
                 for d_idx, ds_name in enumerate(dataset_names):
                     res = final_results[d_idx]
                     if res and pipe in res:
                         val = res[pipe][metric_key]
-                        # No edge color, smaller dot, grey only, and half transparent
                         ax.scatter(box_idx, val, color='black', alpha=0.5,
                                    marker='o', zorder=3, s=30)
             

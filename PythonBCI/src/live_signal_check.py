@@ -21,18 +21,16 @@ def main():
     info = inlet.info()
     n_channels = info.channel_count()
     fs = info.nominal_srate()
-    if fs == 0: fs = 250.0  # Fallback for Unicorn
+    if fs == 0: fs = 250.0
     
     print(f"Connected to stream: {info.name()} | Channels: {n_channels} | FS: {fs}Hz")
     print("Starting Live Signal Check...")
     time.sleep(2)
     
-    # Increased buffer to 4 seconds to allow filter transients to settle
     buffer_seconds = 4.0
     buffer_size = int(fs * buffer_seconds)
     buffer = np.zeros((n_channels, buffer_size))
     
-    # Try to extract channel names from the stream info
     ch_names = []
     desc = info.desc().child("channels")
     if not desc.empty():
@@ -42,7 +40,6 @@ def main():
             ch_names.append(name if name else f"CH {i+1}")
             ch = ch.next_sibling()
     
-    # Fallback to standard Unicorn Hybrid Black channel names if metadata is missing
     if not ch_names or all("CH " in n for n in ch_names):
         unicorn_names = ["FC3", "C3", "CP3", "Cz", "CPz", "FC4", "C4", "CP4"]
         ch_names = unicorn_names + [f"AUX {i+1}" for i in range(n_channels - len(unicorn_names))]
@@ -51,24 +48,20 @@ def main():
     last_update_time = time.time()
     
     while True:
-        # Pull chunk
         chunk, timestamps = inlet.pull_chunk(timeout=0.1, max_samples=buffer_size)
         if chunk:
-            chunk = np.array(chunk).T # (channels, samples)
+            chunk = np.array(chunk).T 
             n_samples = chunk.shape[1]
             
-            # Update buffer (rolling old data left, adding new data at the end)
             buffer = np.roll(buffer, -n_samples, axis=1)
             buffer[:, -n_samples:] = chunk
             samples_received += n_samples
             
-            # Update display every ~1 second
             current_time = time.time()
             if samples_received >= fs or (current_time - last_update_time) > 1.0:
                 samples_received = 0
                 last_update_time = current_time
                 
-                # 1. Scaling check
                 temp_std = np.std(buffer, axis=1)
                 scale_factor = 1.0
                 if np.median(temp_std) < 1e-3:
@@ -76,38 +69,23 @@ def main():
                 
                 scaled_buffer = buffer * scale_factor
                 
-                # 2. Filter and Reference (1-40 Hz + Notch + CAR)
                 try:
-                    # Use only the first 8 channels for EEG health check
                     eeg_buffer = scaled_buffer[:8, :]
                     
-                    # Apply Notch (50Hz) and Bandpass (1-40Hz)
                     f_notch = mne.filter.notch_filter(eeg_buffer, fs, [50], verbose=False)
                     f_band = mne.filter.filter_data(f_notch, fs, 1.0, 40.0, verbose=False)
                     
-                    # 3. OSCAR-inspired Artifact Removal (Online Signal Conditioning)
-                    # We use a spatiotemporal whitening technique to identify and attenuate 
-                    # high-variance components (muscle artifacts, sudden movements).
-                    # This is a simplified open-source version of g.tec's OSCAR algorithm.
                     def apply_oscar(X):
-                        # Calculate covariance across channels
                         cov = np.cov(X)
-                        # Eigen-decomposition to find the "loudest" directions in the signal
                         evals, evecs = np.linalg.eigh(cov)
-                        # Artifacts (like muscle/movement) have massive eigenvalues compared to EEG
-                        # We cap the components that are > 15x the median variance
                         threshold = np.median(evals) * 15.0
                         evals_capped = np.minimum(evals, threshold)
-                        # Reconstruct the signal with attenuated artifacts
                         whitening_mat = evecs @ np.diag(np.sqrt(evals_capped / (evals + 1e-9))) @ evecs.T
                         return whitening_mat @ X
 
                     f_clean = apply_oscar(f_band)
-                    
-                    # 4. Apply CAR (Common Average Reference)
                     f_car = f_clean - np.mean(f_clean, axis=0)
                     
-                    # 5. Crop transients
                     eval_samples = int(fs * 1.0)
                     stable_data = f_car[:, -eval_samples:]
                     noise_levels = np.std(stable_data, axis=1)
@@ -138,7 +116,6 @@ def main():
                         status = "BAD CONTACT"
                         bad_channels.append(name)
                     
-                    # Visual bar
                     bar_length = min(40, int(noise / 2.5))
                     bar = "█" * bar_length
                     

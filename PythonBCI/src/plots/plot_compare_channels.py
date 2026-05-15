@@ -122,7 +122,6 @@ def main():
     print("\nEvaluating 8 Channel (Stripped) Data...")
     res_8 = evaluate_datasets(DATA_DIRS_8CH, pipelines, min_acc)
 
-    # Plotting
     fig, (ax_acc, ax_auc) = plt.subplots(1, 2, figsize=(10, 4.5))
     
     metrics = [("accuracy", ax_acc, "Accuracy"), ("auc", ax_auc, "ROC AUC")]
@@ -135,7 +134,6 @@ def main():
         data_22 = [[r.get(pipe, {}).get(metric_key, 0) for r in res_22 if r and pipe in r] for pipe in pipelines]
         data_8 = [[r.get(pipe, {}).get(metric_key, 0) for r in res_8 if r and pipe in r] for pipe in pipelines]
         
-        # 22ch boxes
         bp_22 = ax.boxplot(data_22, positions=positions_22, widths=0.3, patch_artist=True)
         for patch in bp_22['boxes']:
             patch.set_facecolor(box_colors['22ch'])
@@ -143,15 +141,14 @@ def main():
         for median in bp_22['medians']:
             median.set(color='black', linewidth=1.5)
             
-        # 8ch boxes
+
         bp_8 = ax.boxplot(data_8, positions=positions_8, widths=0.3, patch_artist=True)
         for patch in bp_8['boxes']:
             patch.set_facecolor(box_colors['8ch'])
             patch.set_alpha(0.6)
         for median in bp_8['medians']:
             median.set(color='black', linewidth=1.5)
-            
-        # Scatter dots
+
         for idx, (p22, p8) in enumerate(zip(positions_22, positions_8)):
             if data_22[idx]:
                 ax.scatter([p22]*len(data_22[idx]), data_22[idx], color='black', alpha=0.5, s=30, zorder=3)
@@ -171,7 +168,6 @@ def main():
         ax.set_ylim(0.4, 1.05)
         ax.grid(True, alpha=0.3)
         
-        # Legend
         from matplotlib.patches import Patch
         from matplotlib.lines import Line2D
         legend_elements = [

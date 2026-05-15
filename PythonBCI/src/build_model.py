@@ -23,7 +23,6 @@ def main():
     parser.add_argument("--extra_models", action="store_true", help="Include non-core models (CSP, standard Covariance) in evaluation")
     args = parser.parse_args()
 
-    # 1. Prepare Paths
     data_dir = Path(args.data_dir)
     batch_files = sorted(glob.glob(str(data_dir / "batch_*.npz")))
     
@@ -37,11 +36,9 @@ def main():
     else:
         save_dir = Path(args.save_dir)
     
-    # 2. Pipeline-Specific Data Filtering and Training
     min_acc = 0.55
     metrics_log = []
     
-    # Core pipelines requested by the user for default evaluation
     core_pipelines = ["aug_ts_lr", "aug_ts_svm", "aug_ts_mlp"]
     
     if args.pipeline == "all":
@@ -63,7 +60,6 @@ def main():
         print(f"PIPELINE: {pipe_name}")
         print("="*60)
         
-        # Decide preprocessing for this pipeline (CSD vs CAR)
         def evaluate_all_batches(car_flag):
             batches_info = []
             accepted_count = 0
@@ -97,7 +93,6 @@ def main():
                     batches_info.append({"Batch": i, "Accuracy": -1, "AUC": -1, "Params": {}, "Accepted": False})
             return accepted_count, batches_info
 
-        # 2. Decide valid batches for this pipeline
         if args.combined:
             print(f"Combined mode: Including all {len(batch_files)} batches regardless of performance.")
             valid_batches_for_pipe = []
@@ -115,7 +110,6 @@ def main():
             print("Testing all batches with CAR...")
             car_count, car_info = evaluate_all_batches(car_flag=True)
             
-            # Heuristic: Choose based on count, then average accuracy
             use_car_for_pipe = False
             if car_count > csd_count:
                 use_car_for_pipe = True
@@ -152,7 +146,6 @@ def main():
                 else:
                     print(f"  Batch {b['Batch']}: Dropped ({b['Accuracy']:.4f})")
 
-        # 3. Merge and Train for this specific pipeline
         if not valid_batches_for_pipe:
             print(f"Warning: No batches passed threshold for {pipe_name}. Skipping.")
             continue
@@ -208,7 +201,6 @@ def main():
         except Exception as e:
             print(f"Final training failed for {pipe_name}: {e}")
 
-    # 4. Final Wrap-up
     if best_overall_model is None:
         print("\nError: All pipelines failed or no batches were accepted.")
         return
@@ -216,7 +208,6 @@ def main():
     print("\n" + "="*60)
     print(f"DONE! Best overall pipeline is {best_pipeline_name} with score {best_overall_score:.4f}")
     
-    # 5. Save Metrics CSV
     metrics_path = save_dir / "metrics.csv"
     with open(metrics_path, 'w', newline='') as f:
         writer = csv.DictWriter(f, fieldnames=["Batch", "Pipeline", "Accuracy", "AUC", "Status", "Best Params"])
@@ -224,7 +215,6 @@ def main():
         writer.writerows(metrics_log)
     print(f"Metrics log saved to: {metrics_path}")
 
-    # 6. Save final model.pkl
     model_pkl_path = save_dir / "model.pkl"
     with open(model_pkl_path, 'wb') as f:
         pickle.dump(best_overall_model, f)

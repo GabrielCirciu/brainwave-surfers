@@ -15,16 +15,11 @@ def apply_oscar(eeg_data, fs):
     Online Signal Conditioning and Artifact Removal (OSCAR-like).
     eeg_data: (samples, channels)
     """
-    # 1. Basic filtering (required for OSCAR to see brain components clearly)
-    # We transpose to (channels, samples) for MNE and Processing
     X = eeg_data.T
     
-    # Highpass (1Hz) and Notch (50Hz) using IIR filters (Better for short 4s segments)
     X = mne.filter.filter_data(X.astype(np.float64), fs, 1.0, None, method='iir', verbose=False)
     X = mne.filter.notch_filter(X, fs, [50], method='iir', verbose=False)
     
-    # 2. Spatiotemporal Whitening (Artifact Removal)
-    # Detects and attenuates high-variance directions (muscle/movement)
     cov = np.cov(X)
     evals, evecs = np.linalg.eigh(cov)
     threshold = np.median(evals) * 15.0
@@ -32,7 +27,6 @@ def apply_oscar(eeg_data, fs):
     whitening_mat = evecs @ np.diag(np.sqrt(evals_capped / (evals + 1e-9))) @ evecs.T
     X_clean = whitening_mat @ X
     
-    # 3. Transpose back to (samples, channels)
     return X_clean.T
 
 BUFFER_DUR = 4.0
@@ -45,7 +39,6 @@ def main():
     parser.add_argument("--use_aux", default=False, action="store_true", help="Use auxiliary channels along with EEG")
     args = parser.parse_args()
 
-    # 1. Setup New Session
     session_name = args.session_name
     
     folder_time = datetime.now().strftime("%y-%m-%d-%H-%M")
@@ -59,7 +52,6 @@ def main():
     print(f"\nRecording data to: {output_dir}")
     print(f"Models will be saved to: {model_save_dir}\n")
 
-    # 2. Load Base Data
     print(f"Loading base data from {args.base_dir}...")
     base_files = sorted(glob.glob(os.path.join(args.base_dir, "batch_*.npz")))
     if not base_files:
@@ -75,7 +67,6 @@ def main():
         if 'aux' in data:
             all_base_aux.append(data['aux'])
         else:
-            # Create dummy aux if missing from base data
             dummy_aux = np.zeros((data['eeg'].shape[0], data['eeg'].shape[1], 10))
             all_base_aux.append(dummy_aux)
         all_base_labels.append(data['labels'])
@@ -84,9 +75,6 @@ def main():
     base_aux = np.concatenate(all_base_aux, axis=0)
     base_labels = np.concatenate(all_base_labels, axis=0)
     
-    # IMPORTANT: Apply OSCAR and Normalize base data trials to std=1 to fix scale mismatches 
-    # between gold data and live streaming data.
-    # We use a default fs of 250 for base data if not specified, though it will be synced later.
     base_fs = 250.0 
     print("Applying OSCAR cleaning to base data...")
     for i in range(base_eeg.shape[0]):
@@ -97,7 +85,6 @@ def main():
             
     print(f"Loaded and cleaned {len(base_labels)} trials from base dataset.")
 
-    # 3. LSL Setup
     print("Looking for UnityMarkers stream...")
     marker_streams = resolve_byprop('name', 'UnityMarkers', 1, 3.0)
     if not marker_streams:
@@ -116,13 +103,10 @@ def main():
     stream_channels = eeg_inlet.info().channel_count()
     BUFFER_SAMPLES = int(sampling_frequency * BUFFER_DUR)
     
-    # Determine expected AUX channels based on device/stream
     expected_aux_channels = 10 if stream_channels < 20 else 1
 
-    # Sync base data sample length and AUX channels with live expectations to avoid concatenation errors
     print(f"Syncing base data to match live session (Length: {BUFFER_SAMPLES}, AUX: {expected_aux_channels})...")
     
-    # Sync Length (Dimension 1)
     if base_eeg.shape[1] != BUFFER_SAMPLES:
         if base_eeg.shape[1] > BUFFER_SAMPLES:
             base_eeg = base_eeg[:, :BUFFER_SAMPLES, :]
@@ -132,7 +116,6 @@ def main():
             base_eeg = np.pad(base_eeg, ((0,0), (0, pad_w), (0,0)), mode='edge')
             base_aux = np.pad(base_aux, ((0,0), (0, pad_w), (0,0)), mode='edge')
     
-    # Sync AUX Channels (Dimension 2)
     if base_aux.shape[2] != expected_aux_channels:
         if base_aux.shape[2] > expected_aux_channels:
             base_aux = base_aux[:, :, :expected_aux_channels]
@@ -140,7 +123,6 @@ def main():
             pad_c = expected_aux_channels - base_aux.shape[2]
             base_aux = np.pad(base_aux, ((0,0), (0,0), (0, pad_c)), mode='constant')
 
-    # 4. Recording State
     new_epochs_eeg_clean = []
     new_epochs_eeg_raw = []
     new_epochs_aux = []
@@ -152,7 +134,6 @@ def main():
     trial_timestamps = []
     metrics_log = []
 
-    # 5. Baseline Evaluation (Before any new trials)
     print("\n--- Evaluating Baseline Performance (Gold Data Only) ---")
     temp_base_path = os.path.join(output_dir, "base_only.npz")
     
@@ -187,7 +168,6 @@ def main():
         except Exception as e:
             print(f"  - {pipe} baseline failed: {e}")
             
-    # Initial CSV save
     csv_path = os.path.join(model_save_dir, "metrics.csv")
     with open(csv_path, 'w', newline='') as f:
         writer = csv.DictWriter(f, fieldnames=["Batch", "Pipeline", "Accuracy", "AUC", "Status", "Best Params"])
@@ -220,33 +200,27 @@ def main():
                     trial_data = np.concatenate(trial_chunks, axis=0)
                     trial_ts = np.concatenate(trial_timestamps, axis=0)
                     
-                    # Uniform Length
                     if trial_data.shape[0] >= BUFFER_SAMPLES:
                         trial_data = trial_data[:BUFFER_SAMPLES, :]
                     else:
                         trial_data = np.pad(trial_data, ((0, BUFFER_SAMPLES - trial_data.shape[0]), (0, 0)), mode='edge')
                     
-                    # Split EEG/AUX
                     if stream_channels < 20:
                         eeg_data = trial_data[:, :8]
                         aux_data = trial_data[:, 8:17]
-                        # Append timestamp to the last column of aux_data
                         ts_col = trial_ts[:BUFFER_SAMPLES].reshape(-1, 1)
                         if ts_col.shape[0] < BUFFER_SAMPLES:
                             ts_col = np.pad(ts_col, ((0, BUFFER_SAMPLES - ts_col.shape[0]), (0, 0)), mode='edge')
                         aux_data_full = np.hstack((aux_data, ts_col))
                     else:
                         eeg_data = trial_data
-                        # For high-res devices, we just provide the timestamp as the only AUX channel
                         ts_col = trial_ts[:BUFFER_SAMPLES].reshape(-1, 1)
                         if ts_col.shape[0] < BUFFER_SAMPLES:
                             ts_col = np.pad(ts_col, ((0, BUFFER_SAMPLES - ts_col.shape[0]), (0, 0)), mode='edge')
                         aux_data_full = ts_col
                     
-                    # Keep raw version before OSCAR
                     eeg_data_raw = eeg_data.copy()
                     
-                    # Apply OSCAR and Normalize new trial to std=1 to match base data
                     eeg_data_clean = apply_oscar(eeg_data_raw, sampling_frequency)
                     trial_std = np.std(eeg_data_clean)
                     if trial_std > 0:
@@ -263,7 +237,6 @@ def main():
                         print(f"\n--- Batch {batch_count} Complete ---")
                         print("Saving new data and retraining refined model...")
                         
-                        # Save the new batch (Clean and Raw versions)
                         new_eeg_clean_arr = np.array(new_epochs_eeg_clean)
                         new_eeg_raw_arr = np.array(new_epochs_eeg_raw)
                         new_aux_arr = np.array(new_epochs_aux)
@@ -275,9 +248,7 @@ def main():
                         np.savez(batch_path_clean, eeg=new_eeg_clean_arr, aux=new_aux_arr, labels=new_labels_arr)
                         np.savez(batch_path_raw, eeg=new_eeg_raw_arr, aux=new_aux_arr, labels=new_labels_arr)
                         
-                        # Merge Base + ALL recorded batches in THIS session (using clean data for training)
                         session_batches = sorted(glob.glob(os.path.join(output_dir, "batch_*.npz")))
-                        # Filter out the raw files so we only train on clean data
                         session_batches = [b for b in session_batches if "_raw.npz" not in b]
                         
                         all_session_eeg = []
@@ -289,7 +260,6 @@ def main():
                             all_session_aux.append(sdata['aux'])
                             all_session_labels.append(sdata['labels'])
                         
-                        # Final Merge: [Gold Data] + [Session Batch 0] + [Session Batch 1] ...
                         merged_eeg = np.concatenate([base_eeg] + all_session_eeg, axis=0)
                         merged_labels = np.concatenate([base_labels] + all_session_labels, axis=0)
                         
@@ -335,18 +305,15 @@ def main():
                                 print(f"  - {pipe} failed: {e}")
                         
                         if best_model:
-                            # Save refined model to session directory
                             model_path = os.path.join(model_save_dir, "model.pkl")
                             with open(model_path, 'wb') as f:
                                 pickle.dump(best_model, f)
                             
-                            # Deploy to root models folder for immediate use
                             root_model_path = os.path.join("PythonBCI", "models", "model.pkl")
                             with open(root_model_path, 'wb') as f:
                                 pickle.dump(best_model, f)
                             print(f"Refined model ({best_name}) deployed to {root_model_path}\n")
 
-                        # Save metrics after every batch
                         with open(csv_path, 'w', newline='') as f:
                             writer = csv.DictWriter(f, fieldnames=["Batch", "Pipeline", "Accuracy", "AUC", "Status", "Best Params"])
                             writer.writeheader()

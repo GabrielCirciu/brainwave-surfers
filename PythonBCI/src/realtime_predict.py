@@ -14,16 +14,11 @@ def apply_oscar(eeg_data, fs):
     Online Signal Conditioning and Artifact Removal (OSCAR-like).
     eeg_data: (samples, channels)
     """
-    # 1. Basic filtering (required for OSCAR to see brain components clearly)
-    # We transpose to (channels, samples) for MNE and Processing
     X = eeg_data.T
     
-    # Highpass (1Hz) and Notch (50Hz) using IIR filters (Better for short 4s segments)
     X = mne.filter.filter_data(X.astype(np.float64), fs, 1.0, None, method='iir', verbose=False)
     X = mne.filter.notch_filter(X, fs, [50], method='iir', verbose=False)
     
-    # 2. Spatiotemporal Whitening (Artifact Removal)
-    # Detects and attenuates high-variance directions (muscle/movement)
     cov = np.cov(X)
     evals, evecs = np.linalg.eigh(cov)
     threshold = np.median(evals) * 15.0
@@ -31,7 +26,6 @@ def apply_oscar(eeg_data, fs):
     whitening_mat = evecs @ np.diag(np.sqrt(evals_capped / (evals + 1e-9))) @ evecs.T
     X_clean = whitening_mat @ X
     
-    # 3. Transpose back to (samples, channels)
     return X_clean.T
 
 def main():
@@ -67,7 +61,6 @@ def main():
             print("Still waiting for the Data stream... (Make sure LSL is set to 'send all signals in one stream')")
             time.sleep(1)
 
-    # We might have zombie streams that were not closed, so we must use the one that is transmitting data.
     target_stream = None
     eeg_inlet = None
 
@@ -94,7 +87,6 @@ def main():
     
     print(f"\nConnected to active stream! channels={stream_channels}, fs={fs}Hz")
 
-    # Setting up the UnityMarkers connection to receive triggers
     print("\nLooking for UnityMarkers stream... (Make sure Unity is Playing!)")
     marker_streams = []
     while not marker_streams:
@@ -103,17 +95,13 @@ def main():
             print("Still waiting for UnityMarkers stream...")
             time.sleep(1)
             
-    # Connect to ALL found UnityMarkers streams (in case there are multiple in the scene)
     marker_inlets = [StreamInlet(info) for info in marker_streams]
     print(f"Connected to {len(marker_inlets)} UnityMarkers stream(s)!")
     
-    # Real-time processing parameters
-    # The model was trained on 4-second epochs. 
     BUFFER_DUR = 4.0
     BUFFER_SAMPLES = int(fs * BUFFER_DUR)
     EEG_CHANNELS = 8
     
-    # We create an MNE info object to use their filter function 
     if EEG_CHANNELS == 8:
         ch_names = ["FC3", "C3", "CP3", "Cz", "CPz", "FC4", "C4", "CP4"]
     else:
@@ -127,13 +115,10 @@ def main():
     
     try:
         while True:
-            # We poll all active marker inlets
             for inlet in marker_inlets:
                 try:
                     marker, _ = inlet.pull_sample(timeout=0.0)
                 except Exception as e:
-                    # If one stream dies, we just ignore it. 
-                    # Unity might have destroyed an object but kept the game running.
                     continue
 
                 if marker:
@@ -147,32 +132,25 @@ def main():
                     is_collecting = True
                     trial_chunks = []
                     trial_timestamps = []
-                    # Clear out any old EEG data sitting in the queue
                     eeg_inlet.flush()
                     collection_start_time = time.time()
 
-            # 2. Collect Data if triggered
             if is_collecting:
                 chunk, timestamps = eeg_inlet.pull_chunk(timeout=0.1)
                 if chunk:
-                    # Match calibrate.py exact fetching shape: (samples, stream_channels)
                     chunk_arr = np.array(chunk)[:, :stream_channels]
                     ts_arr = np.array(timestamps)
                     trial_chunks.append(chunk_arr)
                     trial_timestamps.append(ts_arr)
                     
-                # Collect exactly 4 seconds based on actual elapsed time
                 if time.time() - collection_start_time >= 4.0:
                     is_collecting = False
                     
                     if len(trial_chunks) > 0:
-                        # Combine all chunks collected during the 4 seconds
                         trial_data = np.concatenate(trial_chunks, axis=0)
                         trial_ts = np.concatenate(trial_timestamps, axis=0)
                         actual_length = trial_data.shape[0]
                         
-                        # Ensure uniform lengths for ML models (e.g. exactly 4 seconds)
-                        # If it's too long, truncate it. If it's too short, pad with the last edge value
                         if actual_length < BUFFER_SAMPLES * 0.9:
                             print(f"WARNING: Only collected {actual_length} samples ({actual_length/fs:.2f}s) instead of {BUFFER_SAMPLES} samples (4.0s). LSL stream might be dropping packets!")
                             
@@ -184,30 +162,22 @@ def main():
                             trial_data = np.pad(trial_data, ((0, pad_width), (0, 0)), mode='edge')
                             trial_ts = np.pad(trial_ts, (0, pad_width), mode='edge')
                     
-                        # Split the channels: 0-7 are EEG, 8-16 are AUX (accelerometer, gyro, battery, etc.)
                         eeg_data = trial_data[:, :8].astype(np.float64)
                         aux_data = trial_data[:, 8:17]
                         
-                        # Apply OSCAR cleaning (Match online_refine.py)
                         eeg_data = apply_oscar(eeg_data, fs)
                         
-                        # Normalize trial to std=1 to match online_refine.py scaling fix
                         trial_std = np.std(eeg_data)
                         if trial_std > 0:
                             eeg_data = eeg_data / trial_std
                         
-                        # Append timestamp to the last column of aux_data (making it 10 columns)
                         ts_col = trial_ts.reshape(-1, 1)
                         aux_data_with_ts = np.hstack((aux_data, ts_col))
                         
-                        # 3. Preparation & Inference
                         print(f"4 seconds elapsed! EEG Shape: {eeg_data.shape} | AUX: {aux_data_with_ts.shape}. Running Inference...")
                         
-                        # Convert to MNE format: (1, channels, samples)
                         X_raw_uV = eeg_data.T.reshape(1, EEG_CHANNELS, BUFFER_SAMPLES)
                         
-                        # 4. Filter data (Match train.py)
-                        # Notch filter (50 Hz)
                         for freq in np.arange(50, fs / 2, 50):
                             X_raw_uV = mne.filter.notch_filter(
                                 X_raw_uV.astype(np.float64), 
@@ -217,14 +187,11 @@ def main():
                                 verbose=False
                             )
                             
-                        # Convert to Volts
                         X_raw = X_raw_uV * 1e-6
                         X_epochs = mne.EpochsArray(X_raw, mne_info, verbose=False)
                         
-                        # Bandpass filter (8-30 Hz)
                         X_epochs.filter(8., 30., fir_design='firwin', verbose=False)
                         
-                        # Apply Surface Laplacian (CSD)
                         try:
                             X_epochs.set_montage("standard_1020")
                             X_epochs = mne.preprocessing.compute_current_source_density(X_epochs)
@@ -232,18 +199,15 @@ def main():
                             print(f"CSD failed: {e}, falling back to CAR")
                             X_epochs.set_eeg_reference("average", ch_type="eeg", verbose=False)
                         
-                        # Drop the oldest 0.5 seconds of the buffer to match training curve
                         X_epochs.crop(tmin=0.5)
                         
                         X_filtered = X_epochs.get_data(copy=True)
                         
                         print(f"DEBUG: actual_length={actual_length}, X_raw var={np.var(X_raw):.2e}, X_filtered var={np.var(X_filtered):.2e}")
                         
-                        # 5. Predict Probabilities using trained model (clf)
                         probs = clf.predict_proba(X_filtered)[0] 
                         predicted_class = np.argmax(probs)
                         
-                        # 6. Simulate Keypress
                         if predicted_class == 0:
                             print(f"PREDICTION: Left  (L: {probs[0]:.2f} | R: {probs[1]:.2f}) -> Pressing 'left' key!\n")
                             pydirectinput.keyDown('left')

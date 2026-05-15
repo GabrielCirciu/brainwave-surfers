@@ -26,19 +26,15 @@ def load_and_preprocess(data_dir, eeg_device="Unicorn"):
         all_eeg.append(data['eeg'])
         all_labels.append(data['labels'])
         
-    # Concatenate all batches
     epochs_data = np.concatenate(all_eeg, axis=0)
     labels = np.concatenate(all_labels, axis=0)
     
-    # Transpose to MNE format: (epochs, channels, samples)
     epochs_data = np.transpose(epochs_data, (0, 2, 1))
-    
-    # 1. Device-specific Channel Mapping and Scaling
+
     eeg_ch_count = 8
     base_names = ["FC3", "C3", "CP3", "Cz", "CPz", "FC4", "C4", "CP4"]
     
     if eeg_device == "Unicorn":
-        # Scale only the EEG channels
         if np.max(np.abs(epochs_data[:, :eeg_ch_count, :])) > 100.0:
             print("Scaling Unicorn EEG from raw units to µV...")
             epochs_data[:, :eeg_ch_count, :] /= 1000.0
@@ -55,7 +51,6 @@ def load_and_preprocess(data_dir, eeg_device="Unicorn"):
     fs = epochs_data.shape[2] / 4
     info = mne.create_info(ch_names=ch_names, sfreq=fs, ch_types=ch_types)
     
-    # Notch Filter
     for freq in [50]:
         epochs_data = mne.filter.notch_filter(
             epochs_data.astype(np.float64), 
@@ -73,10 +68,8 @@ def load_and_preprocess(data_dir, eeg_device="Unicorn"):
     
     epochs = mne.EpochsArray(epochs_data * 1e-6, info, events=events, verbose=False)
     
-    # Bandpass Filter
     epochs.filter(8.0, 30.0, fir_design="firwin", skip_by_annotation="edge", verbose=False) 
     
-    # 2. Artifact Rejection (Cleans up the PSD significantly)
     print("Applying Artifact Rejection (150µV threshold)...")
     epochs.drop_bad(reject=dict(eeg=150e-6), verbose=False)
     print(f"Remaining trials: {len(epochs)}")
@@ -85,16 +78,13 @@ def load_and_preprocess(data_dir, eeg_device="Unicorn"):
         print("Error: All epochs dropped during artifact rejection.")
         return None, None, None
     
-    # Set montage for both to ensure spatial colors and head legends work in PSD
     try:
         epochs.set_montage("standard_1020")
     except Exception as e:
         print(f"Warning: Could not set montage: {e}")
 
-    # Save a copy before CSD for PSD visualization (to avoid unit errors)
     epochs_raw = epochs.copy()
     
-    # Spatial Filter: CSD
     try:
         epochs = mne.preprocessing.compute_current_source_density(epochs)
     except Exception as e:
@@ -125,16 +115,11 @@ def plot_psd_erd(epochs, labels, epochs_raw, save_path=None):
             "ps.fonttype": 42,
         })
 
-        # 1. Prepare data for visualization
         epochs_viz = epochs.copy().crop(tmin=0.1, tmax=3.9)
         epochs_psd_viz = epochs_raw.copy()
         
-        # Base save name
         base_name = save_path.replace('.pdf', '').replace('.png', '') if save_path else "erd_visualization"
 
-        # --- FIGURE 1: Power Spectral Density ---
-        # 1. Plot PSD exactly like train.py (with spatial colors and head legend)
-        # MNE automatically scales the plot to µV²/Hz, so we do NOT scale manually here.
         fig_psd = plt.figure(figsize=(10, 4))
         ax_psd = fig_psd.add_subplot(1, 1, 1)
         epochs_raw.compute_psd(fmin=1, fmax=45).plot(axes=ax_psd, show=False)
@@ -145,8 +130,6 @@ def plot_psd_erd(epochs, labels, epochs_raw, save_path=None):
             '#F54927', '#DD4424', '#C53E22'  
         ]
         
-        
-        # Filter out frequency band lines (they have very few x points, while PSD lines have many)
         channel_lines = [line for line in ax_psd.lines if len(line.get_xdata()) > 10]
         
         end_points = []
@@ -156,7 +139,6 @@ def plot_psd_erd(epochs, labels, epochs_raw, save_path=None):
             if line_idx < len(channel_colors) and line_idx < len(epochs_raw.ch_names):
                 line.set_color(channel_colors[line_idx])
                 
-                # Collect end points for labels to adjust overlap
                 x_data = line.get_xdata()
                 y_data = line.get_ydata()
                 if len(x_data) > 0 and len(y_data) > 0:
@@ -168,9 +150,8 @@ def plot_psd_erd(epochs, labels, epochs_raw, save_path=None):
                     })
             line_idx += 1
             
-        # Prevent label overlap via relaxation
         end_points.sort(key=lambda pt: pt['y'])
-        min_dist = 1.5 # Minimum dB distance between labels
+        min_dist = 1.5
         for _ in range(10):
             for i in range(len(end_points) - 1):
                 if end_points[i+1]['y'] - end_points[i]['y'] < min_dist:
@@ -182,12 +163,10 @@ def plot_psd_erd(epochs, labels, epochs_raw, save_path=None):
             ax_psd.text(pt['x'] + 0.5, pt['y'], f" {pt['ch_name']}", color=pt['color'],
                         verticalalignment='center', fontsize=10, fontweight='bold')
                         
-        # Remove MNE's default frequency band lines to avoid duplicates
         lines_to_remove = [line for line in ax_psd.lines if line not in channel_lines]
         for line in lines_to_remove:
             line.remove()
 
-        # Add single dark grey dotted lines for 8Hz and 30Hz
         ax_psd.axvline(x=8, color='darkslategrey', linestyle=':', alpha=0.9, linewidth=1.5)
         ax_psd.axvline(x=30, color='darkslategrey', linestyle=':', alpha=0.9, linewidth=1.5)
         
@@ -199,7 +178,6 @@ def plot_psd_erd(epochs, labels, epochs_raw, save_path=None):
                     rotation=0, verticalalignment='top', horizontalalignment='center', fontweight='bold',
                     bbox=dict(facecolor='white', edgecolor='none', alpha=0.7, pad=1))
             
-        # Update colors of the head inset drawing (sensors)
         for ax in fig_psd.axes:
             if ax != ax_psd:
                 for collection in ax.collections:
@@ -215,7 +193,6 @@ def plot_psd_erd(epochs, labels, epochs_raw, save_path=None):
         print(f"PSD plot saved to: {psd_path}")
         plt.close(fig_psd)
 
-        # --- FIGURE 2: Time Series Contrast ---
         fig_time = plt.figure(figsize=(10, 4))
         ax_time = fig_time.add_subplot(1, 1, 1)
         
@@ -248,9 +225,6 @@ def plot_psd_erd(epochs, labels, epochs_raw, save_path=None):
         print(f"Time-series plot saved to: {time_path}")
         plt.close(fig_time)
 
-        # Still call show() if the user is running interactively, 
-        # but we need to re-create for that or just show the last one.
-        # Given it's for Overleaf, the files are most important.
     except Exception as e:
         print(f"Could not generate plot: {e}")
 

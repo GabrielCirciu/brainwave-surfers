@@ -15,7 +15,6 @@ def main():
     device_input = input("Enter device (Unicorn, hiAmp): ").strip()
     if not device_input: device_input = "Unicorn"
 
-    # Using hyphens instead of colons for time, as colons are invalid in Windows paths
     folder_time = datetime.now().strftime("%y-%m-%d-%H-%M")
     folder_name = f"{session_input}-{folder_time}"
     output_dir = os.path.join("PythonBCI", "data", "raw", folder_name)
@@ -25,7 +24,6 @@ def main():
     batch_count = 0
     print(f"\nData will be saved in batches of 10 to: {output_dir}\n")
 
-    # Get unity markers stream
     print("Looking for UnityMarkers stream... (Make sure Unity is Playing!)")
     marker_streams = []
     while not marker_streams:
@@ -53,7 +51,6 @@ def main():
             print("Still waiting for the Data stream... (Make sure LSL is set to 'send all signals in one stream')")
             time.sleep(1)
 
-    # We might have zombie streams that were not closed, so we must use the one that is transmitting data.
     target_stream = None
     eeg_inlet = None
 
@@ -91,7 +88,6 @@ def main():
     stream_channels = eeg_inlet.info().channel_count()
     print(f"Connected to streams. fs={sampling_frequency}, channels={stream_channels}")
 
-    # Data storage
     BUFFER_SAMPLES = int(sampling_frequency * BUFFER_DUR)
     epochs_eeg = []
     epochs_aux = []
@@ -109,7 +105,6 @@ def main():
 
     while True:
 
-        # 1. Pull EEG block
         chunk, timestamps = eeg_inlet.pull_chunk(timeout=0.1)
         if chunk:
             chunk_arr = np.array(chunk)[:, :stream_channels] # Shape: (samples, channels)
@@ -117,12 +112,10 @@ def main():
             
             global_sample_count += chunk_arr.shape[0]
             
-            # If we are in a trial, accumulate the chunks!
             if is_recording:
                 trial_chunks.append(chunk_arr)
                 trial_timestamps.append(ts_arr)
 
-        # 2. Check for markers
         marker, marker_timestamps = marker_inlet.pull_sample(timeout=0.1)
 
         if marker:
@@ -152,13 +145,15 @@ def main():
                 is_recording = False
                 if len(trial_chunks) > 0:
 
-                    # Combine all chunks collected during the trial
                     trial_data = np.concatenate(trial_chunks, axis=0)
                     trial_ts = np.concatenate(trial_timestamps, axis=0)
                     actual_length = trial_data.shape[0]
                     
-                    # Ensure uniform lengths for ML models (e.g. exactly 4 seconds)
-                    # If it's too long, truncate it. If it's too short, pad with the last edge value
+                    if actual_length >= BUFFER_SAMPLES:
+                        trial_data = trial_data[:BUFFER_SAMPLES, :]
+                        trial_ts = trial_ts[:BUFFER_SAMPLES]
+                    else:
+                        pad_width = BUFFER_SAMPLES - actual_length
                     if actual_length >= BUFFER_SAMPLES:
                         trial_data = trial_data[:BUFFER_SAMPLES, :]
                         trial_ts = trial_ts[:BUFFER_SAMPLES]
@@ -167,11 +162,8 @@ def main():
                         trial_data = np.pad(trial_data, ((0, pad_width), (0, 0)), mode='edge')
                         trial_ts = np.pad(trial_ts, (0, pad_width), mode='edge')
 
-                    # Append timestamp to the last column of aux_data (making it 10 columns)
                     ts_col = trial_ts.reshape(-1, 1)
 
-                    # Split the channels: 0-7 are EEG, 8-16 are AUX (accelerometer, gyro, battery, etc.)
-                    # If the stream is more than our regular 17 channels, it's hiAmp so all EEG
                     if stream_channels < 20:
                         eeg_data = trial_data[:, :8]
                         aux_data = trial_data[:, 8:17]
@@ -277,7 +269,6 @@ def main():
     else:
         print("No remaining epochs to save.")
 
-    # === Final Full Model Training ===
     print("\nMerging all batches for final model training...")
     batch_files = glob.glob(os.path.join(output_dir, "batch_*.npz"))
     

@@ -13,7 +13,6 @@ def negative_binomial_pmf(k, r, p):
     return math.comb(k + r - 1, r - 1) * (p**k) * ((1-p)**r)
 
 def plot_distributions():
-    # LaTeX/Overleaf friendly font sizes
     plt.rcParams.update({
         'font.size': 12,
         'axes.labelsize': 14,
@@ -26,7 +25,6 @@ def plot_distributions():
     accuracies = [0.95, 0.75, 0.55]
     lives = 3
     
-    # Evaluate up to a score of 40 rounds as requested
     k_values = np.arange(0, 60)
     
     plt.figure(figsize=(8, 3))
@@ -35,14 +33,10 @@ def plot_distributions():
     
     for i, p in enumerate(accuracies):
         pmf = [negative_binomial_pmf(k, lives, p) for k in k_values]
-        
-        # Theoretical expected score: E[k] = r * p / (1 - p)
         expected_score = lives * p / (1 - p)
         
         label = f'Accuracy {int(p*100)}% (Expected Score: {expected_score:.1f})'
         plt.plot(k_values, pmf, linestyle='-', color=colors[i], label=label, linewidth=2)
-        
-        # Add a vertical dashed line at the expected score
         plt.axvline(x=expected_score, color=colors[i], linestyle='--', alpha=0.7)
         
     plt.title(f'Score Distribution based on Accuracy (Game over after {lives} mistakes)')

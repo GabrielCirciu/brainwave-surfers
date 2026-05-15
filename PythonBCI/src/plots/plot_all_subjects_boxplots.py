@@ -116,7 +116,6 @@ def main():
     print("Evaluating all 9 subjects across all pipelines...")
     res_list = evaluate_datasets(data_dirs, pipelines, min_acc)
 
-    # Plotting Boxplots
     fig, (ax_acc, ax_auc) = plt.subplots(1, 2, figsize=(10, 4.5))
     
     # fig.suptitle('Performance Distribution of 9 Subjects Across Pipelines (Stripped Data)', fontweight='bold')
@@ -131,7 +130,6 @@ def main():
             
         bp = ax.boxplot(box_data, patch_artist=True, tick_labels=pipelines)
         
-        # Style boxes based on pipeline family
         for patch, pipe in zip(bp['boxes'], pipelines):
             if pipe.endswith('mlp'):
                 c = 'forestgreen'
@@ -144,11 +142,9 @@ def main():
             patch.set_facecolor(c)
             patch.set_alpha(0.7)
             
-        # Customize medians and whiskers
         for median in bp['medians']:
             median.set(color='black', linewidth=1.5)
             
-        # Add scatter dots (jittered for visibility)
         for idx, p_data in enumerate(box_data):
             if p_data:
                 x_vals = np.random.normal(idx + 1, 0.04, size=len(p_data))

@@ -19,7 +19,6 @@ def main():
     parser.add_argument("--metric", default="accuracy", choices=["accuracy", "auc"], help="Metric to evaluate and plot.")
     args = parser.parse_args()
 
-    # LaTeX/Overleaf friendly font sizes
     plt.rcParams.update({
         'font.size': 14,
         'axes.labelsize': 16,
@@ -34,8 +33,6 @@ def main():
     pipelines = ["aug_ts_lr", "aug_ts_svm", "aug_ts_mlp"]
     min_acc = 0.55
 
-    # Store results: results[dataset_idx][pipeline_name][batch_idx] = accuracy
-    # Using dictionary since some batches might be dropped or missing
     all_results = []
     final_results = []
     dataset_names = []
@@ -58,12 +55,10 @@ def main():
             for pipe in pipelines:
                 print(f"    Evaluating {pipe}...")
                 try:
-                    # Unicorn headset, force_car=True gives the requested preprocessing
-                    # We pass no_save=True to avoid cluttering models/
                     _, report = train_model(
                         data_path=batch_file,
                         pipeline_name=pipe,
-                        save_dir="temp", # unused when no_save=True
+                        save_dir="temp",
                         use_grid=False,
                         eeg_device="Unicorn",
                         force_car=True,
@@ -136,7 +131,6 @@ def main():
                 print(f"      Error evaluating final {pipe}: {e}")
                 final_dataset_res[pipe] = 0.0
                 
-            # Cleanup temp file
             try:
                 os.remove(pipe_merged_path)
             except:
@@ -145,7 +139,6 @@ def main():
         final_results.append(final_dataset_res)
         all_results.append(dataset_res)
 
-    # Plotting
     fig, (ax, ax_box) = plt.subplots(1, 2, figsize=(10, 4.5), gridspec_kw={'width_ratios': [2.2, 1]})
     
     dataset_colors = ['darkorange', 'dodgerblue', 'forestgreen']
@@ -186,7 +179,6 @@ def main():
             box_data.append(env_final_accuracies)
             box_labels.append(ds_name)
                 
-        # Plot best model line for dataset
         ax.plot(valid_x, valid_y, color=color, linewidth=2,
                 label=f"{ds_name}")
 
@@ -198,11 +190,9 @@ def main():
     ax.set_ylabel(args.metric.replace("_", " ").title())
     ax.set_title("Pipeline Performance Across Batches and Environments")
     
-    # Legend in the line chart on the bottom left
     ax.legend(loc='lower left')
     ax.grid(True, alpha=0.3)
 
-    # Plot Boxplot
     if box_data:
         bplot = ax_box.boxplot(box_data, patch_artist=True, tick_labels=box_labels)
         for patch, color in zip(bplot['boxes'], dataset_colors[:len(box_data)]):
@@ -211,11 +201,9 @@ def main():
             
         ax_box.tick_params(axis='x', labelrotation=15)
             
-        # Customize medians and whiskers
         for median in bplot['medians']:
             median.set(color='black', linewidth=1.5)
             
-        # Add scatter dots to show individual model performance
         model_colors = {'aug_ts_lr': 'red', 'aug_ts_svm': 'purple', 'aug_ts_mlp': 'black'}
         model_markers = {'aug_ts_lr': 'o', 'aug_ts_svm': 's', 'aug_ts_mlp': '^'}
         model_labels = {'aug_ts_lr': 'LR', 'aug_ts_svm': 'SVM', 'aug_ts_mlp': 'MLP'}
@@ -240,7 +228,6 @@ def main():
         ax_box.set_title("Final Model Performance")
         ax_box.grid(True, alpha=0.3)
         ax_box.legend(loc='lower left', title="Models")
-        # Ensure y-axis scales match
         ax_box.set_ylim(ax.get_ylim())
 
     plt.tight_layout()

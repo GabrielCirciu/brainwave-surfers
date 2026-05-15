@@ -5,7 +5,6 @@ import pandas as pd
 import os
 
 def plot_scores():
-    # LaTeX/Overleaf friendly font sizes
     plt.rcParams.update({
         'font.size': 12,
         'axes.labelsize': 14,
@@ -32,7 +31,7 @@ def plot_scores():
         scores = [row['game_1'], row['game_2'], row['game_3']]
         if raw_id == 'gold':
             player_label = 'simulation'
-            color = '#B41FFF'  # Purple
+            color = '#B41FFF'
         else:
             player_label = "user " + str(player_num)
             player_num += 1
@@ -46,7 +45,6 @@ def plot_scores():
     plt.ylabel('Score')
     plt.ylim(0, 12)
     
-    # Ensure x-axis only shows the integer rounds
     plt.xticks(rounds)
     
     plt.grid(True, linestyle=':', alpha=0.7)

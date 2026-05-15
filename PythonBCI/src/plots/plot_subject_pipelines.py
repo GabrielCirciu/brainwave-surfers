@@ -110,7 +110,6 @@ def main():
     print(f"Evaluating {data_dir}...")
     res = evaluate_dataset(data_dir, pipelines, min_acc)
 
-    # Plotting
     fig, (ax_acc, ax_auc) = plt.subplots(1, 2, figsize=(12, 5))
     
     # fig.suptitle('Performance Across All Pipelines (subject_3)', fontweight='bold')
@@ -139,7 +138,6 @@ def main():
         ax.set_ylim(0.4, 1.05)
         ax.grid(True, alpha=0.3, axis='y')
         
-        # Add value labels on top of bars
         for bar in bars:
             height = bar.get_height()
             ax.annotate(f'{height:.2f}',
